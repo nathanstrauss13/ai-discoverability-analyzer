@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>innate c3 | ai discoverability analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #005e30;
+            --secondary-color: #f5f2e9;
+            --accent-color: #00a651;
+            --text-color: #333333;
+        }
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+        .divider {
+            height: 2px;
+            background-color: var(--primary-color);
+            margin: 2rem 0;
+        }
+        h1, h2, h3, h4 {
+            color: var(--primary-color);
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #004020;
+        }
+        .btn-primary:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+        .loading-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 9999;
+            flex-direction: column;
+            color: white;
+        }
+        .spinner {
+            border: 5px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top: 5px solid white;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+            margin-bottom: 20px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .hidden {
+            display: none !important;
+        }
+        .score-circle {
+            width: 150px;
+            height: 150px;
+            margin: 0 auto 20px;
+            position: relative;
+        }
+        .score-value {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 48px;
+            font-weight: 700;
+            color: var(--primary-color);
+        }
+        .metric-card {
+            background-color: #f8f8f8;
+            border-left: 4px solid var(--primary-color);
+        }
+        .good { color: #00a651; }
+        .warning { color: #ff9500; }
+        .bad { color: #ff3b30; }
+        .error-message {
+            background-color: #fee;
+            color: #c33;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+            white-space: pre-line;
+        }
+        input[type="url"] {
+            border: 1px solid #d1d5db;
+            transition: border-color 0.3s ease;
+        }
+        input[type="url"]:focus {
+            outline: none;
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 3px rgba(0, 94, 48, 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen p-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="divider"></div>
+        <div class="flex justify-between items-center">
+            <h1 class="text-3xl font-bold mb-4 mt-4">innate c3 | ai discoverability analyzer</h1>
+            <a href="https://innatec3.com/home#contact" class="btn-primary font-bold py-2 px-4 rounded">
+                Consulting Services
+            </a>
+        </div>
+        <div class="divider"></div>
+        
+        <div class="card px-8 pt-6 pb-8 mb-4">
+            <h2 class="text-2xl font-bold mb-6">Analyze Your Website</h2>
+            <p class="text-gray-600 mb-6">Enter a URL to analyze how well your content is optimized for AI crawling and processing.</p>
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-2" for="urlInput">
+                        Website URL
+                    </label>
+                    <div class="flex gap-4">
+                        <input type="url" id="urlInput" placeholder="https://example.com" 
+                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                        <button id="analyzeBtn" onclick="analyzeURL()" 
+                                class="btn-primary font-bold py-2 px-6 rounded focus:outline-none focus:shadow-outline">
+                            Analyze
+                        </button>
+                    </div>
+                </div>
+                
+                <div id="errorMsg" class="error-message hidden"></div>
+            </div>
+        </div>
+        
+        <!-- Results Section (Hidden by Default) -->
+        <div id="results" class="hidden">
+            <!-- Score Section -->
+            <div class="card px-8 pt-6 pb-8 mb-4">
+                <h2 class="text-2xl font-bold mb-6 text-center">AI Readiness Score</h2>
+                <div class="score-circle">
+                    <svg width="150" height="150">
+                        <circle cx="75" cy="75" r="70" fill="none" stroke="#e0e0e0" stroke-width="10"/>
+                        <circle id="scoreCircle" cx="75" cy="75" r="70" fill="none" stroke="#005e30" stroke-width="10"
+                                stroke-dasharray="440" stroke-dashoffset="440"
+                                transform="rotate(-90 75 75)"
+                                style="transition: stroke-dashoffset 1s ease-in-out"/>
+                    </svg>
+                    <div class="score-value" id="scoreValue">0</div>
+                </div>
+                <p class="text-center text-lg font-semibold" id="scoreLabel">Loading...</p>
+                <p class="text-center text-gray-600" id="scoreDescription"></p>
+            </div>
+            
+            <!-- Technical Analysis -->
+            <div class="card px-8 pt-6 pb-8 mb-4">
+                <h2 class="text-2xl font-bold mb-6">Technical Analysis</h2>
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="analysisGrid">
+                    <!-- Metrics will be inserted here -->
+                </div>
+            </div>
+            
+            <!-- Recommendations -->
+            <div class="card px-8 pt-6 pb-8 mb-4">
+                <h2 class="text-2xl font-bold mb-6">AI Optimization Recommendations</h2>
+                <div class="prose max-w-none" style="white-space: pre-wrap; line-height: 1.8;" id="recommendations">
+                    <!-- Recommendations will be inserted here -->
+                </div>
+            </div>
+        </div>
+        
+        <!-- Loading Overlay (Hidden by Default) -->
+        <div id="loading" class="loading-overlay hidden">
+            <div class="spinner"></div>
+            <p class="text-xl">Analyzing your website...</p>
+            <p class="text-sm mt-2">This may take a moment.</p>
+        </div>
+    </div>
+    
+    <!-- Footer -->
+    <div class="max-w-6xl mx-auto mt-12 mb-4 text-center">
+        <div class="divider"></div>
+        <p class="text-sm text-gray-600">
+            for more information about innate c3, visit <a href="https://innatec3.com" target="_blank" class="text-primary-600 hover:underline" style="color: var(--primary-color);">innatec3.com</a>
+        </p>
+    </div>
+
+    <script>
+        function analyzeURL() {
+            const urlInput = document.getElementById('urlInput');
+            const url = urlInput.value.trim();
+            
+            if (!url) {
+                showError('Please enter a URL to analyze');
+                return;
+            }
+
+            // Reset UI
+            hideError();
+            document.getElementById('results').classList.add('hidden');
+            document.getElementById('loading').classList.remove('hidden');
+            document.getElementById('analyzeBtn').disabled = true;
+
+            // Make API call
+            fetch('/analyze', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ url: url })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    displayResults(data);
+                }
+            })
+            .catch(error => {
+                showError('An error occurred while analyzing the URL. Please try again.');
+                console.error('Error:', error);
+            })
+            .finally(() => {
+                document.getElementById('loading').classList.add('hidden');
+                document.getElementById('analyzeBtn').disabled = false;
+            });
+        }
+
+        function displayResults(data) {
+            // Show results section
+            document.getElementById('results').classList.remove('hidden');
+
+            // Display score
+            const score = data.score;
+            const scoreCircle = document.getElementById('scoreCircle');
+            const scoreValue = document.getElementById('scoreValue');
+            const scoreLabel = document.getElementById('scoreLabel');
+            const scoreDescription = document.getElementById('scoreDescription');
+
+            scoreValue.textContent = score;
+            
+            // Animate score circle
+            const circumference = 2 * Math.PI * 70;
+            const offset = circumference - (score / 100) * circumference;
+            setTimeout(() => {
+                scoreCircle.style.strokeDashoffset = offset;
+            }, 100);
+
+            // Set score color and label
+            if (score >= 80) {
+                scoreCircle.style.stroke = '#00a651';
+                scoreLabel.textContent = 'Excellent';
+                scoreDescription.textContent = 'Your content is well-optimized for AI systems';
+            } else if (score >= 60) {
+                scoreCircle.style.stroke = '#ff9500';
+                scoreLabel.textContent = 'Good';
+                scoreDescription.textContent = 'Your content has room for improvement';
+            } else {
+                scoreCircle.style.stroke = '#ff3b30';
+                scoreLabel.textContent = 'Needs Work';
+                scoreDescription.textContent = 'Significant improvements recommended';
+            }
+
+            // Display analysis metrics
+            const analysisGrid = document.getElementById('analysisGrid');
+            analysisGrid.innerHTML = '';
+
+            const metrics = [
+                {
+                    title: 'Page Title',
+                    value: data.analysis.title !== 'No title found' ? '✓' : '✗',
+                    color: data.analysis.title !== 'No title found' ? 'good' : 'bad'
+                },
+                {
+                    title: 'Meta Description',
+                    value: data.analysis.meta_description ? '✓' : '✗',
+                    color: data.analysis.meta_description ? 'good' : 'bad'
+                },
+                {
+                    title: 'H1 Tags',
+                    value: data.analysis.headings.h1.length,
+                    color: data.analysis.headings.h1.length === 1 ? 'good' : 'warning'
+                },
+                {
+                    title: 'Images with Alt Text',
+                    value: `${data.analysis.images.with_alt}/${data.analysis.images.total}`,
+                    color: data.analysis.images.without_alt === 0 ? 'good' : 'warning'
+                },
+                {
+                    title: 'Structured Data',
+                    value: data.analysis.structured_data ? '✓' : '✗',
+                    color: data.analysis.structured_data ? 'good' : 'bad'
+                },
+                {
+                    title: 'Semantic HTML',
+                    value: Object.values(data.analysis.semantic_elements).reduce((a, b) => a + b, 0),
+                    color: Object.values(data.analysis.semantic_elements).reduce((a, b) => a + b, 0) > 0 ? 'good' : 'bad'
+                }
+            ];
+
+            metrics.forEach(metric => {
+                const card = document.createElement('div');
+                card.className = 'metric-card p-4 rounded';
+                card.innerHTML = `
+                    <div class="font-semibold text-sm mb-1">${metric.title}</div>
+                    <div class="text-2xl font-bold ${metric.color}">${metric.value}</div>
+                `;
+                analysisGrid.appendChild(card);
+            });
+
+            // Display recommendations
+            document.getElementById('recommendations').textContent = data.recommendations;
+
+            // Scroll to results
+            document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function showError(message) {
+            const errorMsg = document.getElementById('errorMsg');
+            errorMsg.textContent = message;
+            errorMsg.classList.remove('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMsg').classList.add('hidden');
+        }
+
+        // Allow Enter key to submit
+        document.getElementById('urlInput').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                analyzeURL();
+            }
+        });
+    </script>
+</body>
+</html>
