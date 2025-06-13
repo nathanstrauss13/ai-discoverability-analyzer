@@ -17,11 +17,17 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "your_secret_key_here")
 
 # Initialize Anthropic client
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-if ANTHROPIC_API_KEY:
-    anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
+anthropic = None
+
+if ANTHROPIC_API_KEY and ANTHROPIC_API_KEY.strip():
+    try:
+        anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
+        print("Anthropic client initialized successfully")
+    except Exception as e:
+        print(f"Error initializing Anthropic client: {e}")
+        anthropic = None
 else:
-    anthropic = None
-    print("Warning: ANTHROPIC_API_KEY not found. AI recommendations will be disabled.")
+    print("Warning: ANTHROPIC_API_KEY not found or empty. AI recommendations will be disabled.")
 
 def fetch_webpage_content(url):
     """Fetch and parse webpage content."""
