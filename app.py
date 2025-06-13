@@ -17,7 +17,11 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "your_secret_key_here")
 
 # Initialize Anthropic client
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
-anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
+if ANTHROPIC_API_KEY:
+    anthropic = Anthropic(api_key=ANTHROPIC_API_KEY)
+else:
+    anthropic = None
+    print("Warning: ANTHROPIC_API_KEY not found. AI recommendations will be disabled.")
 
 def fetch_webpage_content(url):
     """Fetch and parse webpage content."""
@@ -136,6 +140,36 @@ def analyze_webpage_structure(html_content, url):
 def generate_ai_recommendations(analysis):
     """Use Claude to generate specific recommendations based on the analysis."""
     
+    if not anthropic:
+        return """AI-powered recommendations are not available (API key not configured).
+
+Based on the technical analysis, here are general recommendations:
+
+1. **Top Priority Improvements:**
+   - Ensure you have exactly one H1 tag per page
+   - Add meta descriptions to all pages
+   - Implement structured data (Schema.org)
+
+2. **Content Structure:**
+   - Use semantic HTML5 elements (article, section, nav, etc.)
+   - Create a clear heading hierarchy (H1 → H2 → H3)
+   - Break content into logical sections
+
+3. **Technical SEO:**
+   - Add alt text to all images
+   - Create an XML sitemap
+   - Implement Open Graph tags
+
+4. **Accessibility:**
+   - Ensure all interactive elements are keyboard accessible
+   - Use ARIA labels where appropriate
+   - Maintain good color contrast
+
+5. **Quick Wins:**
+   - Add a robots.txt file
+   - Compress images
+   - Minify CSS and JavaScript"""
+    
     # Create a summary of the analysis for Claude
     summary = f"""
     Website Analysis Summary:
@@ -173,7 +207,7 @@ Keep recommendations concise and actionable. Focus on changes that will help AI 
         return response.content[0].text
     except Exception as e:
         print(f"Error generating AI recommendations: {e}")
-        return "Unable to generate AI recommendations at this time."
+        return "Unable to generate AI recommendations at this time. Please check your API configuration."
 
 @app.route('/')
 def index():
