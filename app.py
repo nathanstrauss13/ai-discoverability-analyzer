@@ -9,9 +9,8 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 import sys
 
-# Load .env from parent directory
-parent_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-load_dotenv(os.path.join(parent_dir, '.env'))
+# Load .env file if it exists (for local development)
+load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "your_secret_key_here")
@@ -269,4 +268,8 @@ def calculate_ai_readiness_score(analysis):
     return min(score, max_score)
 
 if __name__ == '__main__':
-    app.run(debug=True, port=5001)
+    # Get port from environment variable for Render deployment
+    port = int(os.environ.get('PORT', 5001))
+    # Disable debug mode in production
+    debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'
+    app.run(debug=debug_mode, host='0.0.0.0', port=port)
