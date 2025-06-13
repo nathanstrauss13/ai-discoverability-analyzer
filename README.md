@@ -1,6 +1,12 @@
 # AI Discoverability Analyzer
 
-A web application that analyzes websites to determine how well they are optimized for AI and Large Language Model (LLM) crawling and processing.
+[![Python](https://img.shields.io/badge/python-3.7+-blue.svg)](https://www.python.org/downloads/)
+[![Flask](https://img.shields.io/badge/flask-2.3.2-green.svg)](https://flask.palletsprojects.com/)
+[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
+A web application that analyzes websites to determine how well they are optimized for AI and Large Language Model (LLM) crawling and processing. Built with Flask and powered by Claude AI for intelligent recommendations.
+
+![AI Discoverability Analyzer](https://img.shields.io/badge/innate%20c3-AI%20Analyzer-005e30)
 
 ## Features
 
