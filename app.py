@@ -219,6 +219,10 @@ Keep recommendations concise and actionable. Focus on changes that will help AI 
 def index():
     return render_template('index.html')
 
+@app.route('/health')
+def health():
+    return jsonify({'status': 'healthy', 'anthropic_configured': anthropic is not None}), 200
+
 @app.route('/analyze', methods=['POST'])
 def analyze():
     data = request.get_json()
@@ -312,4 +316,9 @@ if __name__ == '__main__':
     port = int(os.environ.get('PORT', 5001))
     # Disable debug mode in production
     debug_mode = os.environ.get('FLASK_ENV', 'development') == 'development'
+    
+    print(f"Starting Flask app on port {port}")
+    print(f"Debug mode: {debug_mode}")
+    print(f"ANTHROPIC_API_KEY present: {'Yes' if ANTHROPIC_API_KEY else 'No'}")
+    
     app.run(debug=debug_mode, host='0.0.0.0', port=port)
