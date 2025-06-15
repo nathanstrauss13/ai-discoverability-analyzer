@@ -55,9 +55,10 @@ def fetch_webpage_content(url):
         return None
 
 def analyze_webpage_structure(html_content, url):
-    """Analyze the structure and content of a webpage."""
+    """Analyze the structure and content of a webpage, including advanced discoverability checks."""
     soup = BeautifulSoup(html_content, 'html.parser')
-    
+
+    # Initialize analysis dictionary with new fields
     analysis = {
         'url': url,
         'title': soup.title.string if soup.title else 'No title found',
@@ -91,9 +92,51 @@ def analyze_webpage_structure(html_content, url):
             'header': 0,
             'footer': 0,
             'main': 0
-        }
+        },
+        # New fields for advanced analysis
+        'robots_txt': False,
+        'sitemap_xml': False,
+        'open_graph_tags': [],
+        'twitter_card_tags': [],
+        'canonical_tag': '',
+        'html_lang': '',
+        'meta_charset': ''
     }
-    
+
+    # Check robots.txt and sitemap.xml presence
+    try:
+        parsed_url = urlparse(url)
+        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+        robots_resp = requests.get(urljoin(base_url, '/robots.txt'), timeout=5)
+        if robots_resp.status_code == 200 and 'User-agent' in robots_resp.text:
+            analysis['robots_txt'] = True
+        sitemap_resp = requests.get(urljoin(base_url, '/sitemap.xml'), timeout=5)
+        if sitemap_resp.status_code == 200 and ('<urlset' in sitemap_resp.text or '<sitemapindex' in sitemap_resp.text):
+            analysis['sitemap_xml'] = True
+    except Exception as e:
+        pass  # Don't fail analysis if these checks error
+
+    # Open Graph and Twitter Card tags
+    og_tags = soup.find_all('meta', attrs={'property': re.compile(r'^og:', re.I)})
+    analysis['open_graph_tags'] = [tag.get('property') for tag in og_tags if tag.get('property')]
+    twitter_tags = soup.find_all('meta', attrs={'name': re.compile(r'^twitter:', re.I)})
+    analysis['twitter_card_tags'] = [tag.get('name') for tag in twitter_tags if tag.get('name')]
+
+    # Canonical tag
+    canonical = soup.find('link', rel='canonical')
+    if canonical and canonical.get('href'):
+        analysis['canonical_tag'] = canonical['href']
+
+    # HTML lang attribute
+    html_tag = soup.find('html')
+    if html_tag and html_tag.get('lang'):
+        analysis['html_lang'] = html_tag['lang']
+
+    # Meta charset
+    meta_charset = soup.find('meta', attrs={'charset': True})
+    if meta_charset and meta_charset.get('charset'):
+        analysis['meta_charset'] = meta_charset['charset']
+
     # Get meta description
     meta_desc = soup.find('meta', attrs={'name': 'description'})
     if meta_desc:
@@ -155,6 +198,7 @@ Based on the technical analysis, here are general recommendations:
    - Ensure you have exactly one H1 tag per page
    - Add meta descriptions to all pages
    - Implement structured data (Schema.org)
+   - Add robots.txt and sitemap.xml files
 
 2. **Content Structure:**
    - Use semantic HTML5 elements (article, section, nav, etc.)
@@ -163,8 +207,9 @@ Based on the technical analysis, here are general recommendations:
 
 3. **Technical SEO:**
    - Add alt text to all images
-   - Create an XML sitemap
-   - Implement Open Graph tags
+   - Implement Open Graph and Twitter Card tags
+   - Add canonical tags to prevent duplicate content issues
+   - Specify language with html lang attribute
 
 4. **Accessibility:**
    - Ensure all interactive elements are keyboard accessible
@@ -172,21 +217,42 @@ Based on the technical analysis, here are general recommendations:
    - Maintain good color contrast
 
 5. **Quick Wins:**
-   - Add a robots.txt file
+   - Add charset meta tag
    - Compress images
    - Minify CSS and JavaScript"""
     
-    # Create a summary of the analysis for Claude
+    # Create a comprehensive summary of the analysis for Claude
     summary = f"""
     Website Analysis Summary:
+    - URL: {analysis['url']}
     - Title: {analysis['title']}
     - Meta Description: {'Present' if analysis['meta_description'] else 'Missing'}
+    - HTML Language: {analysis.get('html_lang', 'Not specified')}
+    - Charset: {analysis.get('meta_charset', 'Not specified')}
+    
+    Content Structure:
     - H1 tags: {len(analysis['headings']['h1'])}
     - H2 tags: {len(analysis['headings']['h2'])}
+    - H3-H6 tags: {sum(len(analysis['headings'][f'h{i}']) for i in range(3, 7))}
+    - Semantic HTML5 elements: {sum(analysis['semantic_elements'].values())} total
+      ({', '.join(f"{k}: {v}" for k, v in analysis['semantic_elements'].items() if v > 0)})
+    
+    Media & Links:
     - Total images: {analysis['images']['total']} ({analysis['images']['without_alt']} missing alt text)
-    - Structured data: {'Yes' if analysis['structured_data'] else 'No'}
+    - Internal links: {analysis['links']['internal']}
+    - External links: {analysis['links']['external']}
+    
+    Technical SEO:
+    - Robots.txt: {'Present' if analysis.get('robots_txt') else 'Missing'}
+    - Sitemap.xml: {'Present' if analysis.get('sitemap_xml') else 'Missing'}
+    - Canonical tag: {'Present' if analysis.get('canonical_tag') else 'Missing'}
+    - Structured data (JSON-LD): {'Yes' if analysis['structured_data'] else 'No'}
+    - Open Graph tags: {len(analysis.get('open_graph_tags', []))} found
+    - Twitter Card tags: {len(analysis.get('twitter_card_tags', []))} found
+    
+    Data Organization:
     - Tables: {analysis['tables']}
-    - Semantic HTML5 elements used: {sum(analysis['semantic_elements'].values())}
+    - Forms: {analysis['forms']}
     """
     
     try:
@@ -254,62 +320,187 @@ def analyze():
     # Generate AI recommendations
     ai_recommendations = generate_ai_recommendations(analysis)
     
-    # Calculate overall score
-    score = calculate_ai_readiness_score(analysis)
+    # Calculate overall score and get breakdown
+    score, score_breakdown = calculate_ai_readiness_score(analysis)
     
     return jsonify({
         'success': True,
         'analysis': analysis,
         'recommendations': ai_recommendations,
         'score': score,
+        'score_breakdown': score_breakdown,
         'timestamp': datetime.now().isoformat()
     })
 
 def calculate_ai_readiness_score(analysis):
-    """Calculate an AI readiness score based on various factors."""
+    """Calculate an AI readiness score based on expanded, weighted factors with detailed breakdown."""
     score = 0
     max_score = 100
-    
-    # Title and meta description (15 points)
+    breakdown = {
+        'categories': [],
+        'penalties': [],
+        'total_earned': 0,
+        'total_possible': 100,
+        'final_score': 0
+    }
+
+    # Title and meta description (10 points)
+    title_score = 0
     if analysis['title'] and analysis['title'] != 'No title found':
-        score += 5
+        title_score += 4
     if analysis['meta_description']:
-        score += 10
-    
-    # Heading structure (20 points)
+        title_score += 6
+    score += title_score
+    breakdown['categories'].append({
+        'name': 'Title & Meta Description',
+        'earned': title_score,
+        'possible': 10,
+        'details': f"Title: {'✓' if title_score >= 4 else '✗'}, Meta Description: {'✓' if analysis['meta_description'] else '✗'}"
+    })
+
+    # Heading structure (10 points)
+    heading_score = 0
     if len(analysis['headings']['h1']) == 1:
-        score += 10
+        heading_score += 5
     elif len(analysis['headings']['h1']) > 0:
-        score += 5
-    
+        heading_score += 2
     if len(analysis['headings']['h2']) > 0:
-        score += 10
-    
-    # Images with alt text (15 points)
+        heading_score += 3
+    score += heading_score
+    breakdown['categories'].append({
+        'name': 'Heading Structure',
+        'earned': heading_score,
+        'possible': 10,
+        'details': f"H1: {len(analysis['headings']['h1'])}, H2: {len(analysis['headings']['h2'])}"
+    })
+
+    # Images with alt text (8 points)
+    image_score = 0
     if analysis['images']['total'] > 0:
         alt_ratio = analysis['images']['with_alt'] / analysis['images']['total']
-        score += int(15 * alt_ratio)
+        image_score = int(8 * alt_ratio)
     else:
-        score += 15  # No penalty if no images
-    
-    # Structured data (20 points)
-    if analysis['structured_data']:
-        score += 20
-    
-    # Semantic HTML (20 points)
+        image_score = 8
+    score += image_score
+    breakdown['categories'].append({
+        'name': 'Image Alt Text',
+        'earned': image_score,
+        'possible': 8,
+        'details': f"{analysis['images']['with_alt']}/{analysis['images']['total']} images have alt text" if analysis['images']['total'] > 0 else "No images found"
+    })
+
+    # Structured data (10 points)
+    structured_score = 10 if analysis['structured_data'] else 0
+    score += structured_score
+    breakdown['categories'].append({
+        'name': 'Structured Data',
+        'earned': structured_score,
+        'possible': 10,
+        'details': 'JSON-LD present' if analysis['structured_data'] else 'No structured data found'
+    })
+
+    # Semantic HTML (7 points)
     semantic_count = sum(analysis['semantic_elements'].values())
+    semantic_score = 0
     if semantic_count >= 5:
-        score += 20
+        semantic_score = 7
     elif semantic_count >= 3:
-        score += 15
+        semantic_score = 5
     elif semantic_count >= 1:
-        score += 10
-    
-    # Tables for data (10 points)
-    if analysis['tables'] > 0:
-        score += 10
-    
-    return min(score, max_score)
+        semantic_score = 3
+    score += semantic_score
+    breakdown['categories'].append({
+        'name': 'Semantic HTML',
+        'earned': semantic_score,
+        'possible': 7,
+        'details': f"{semantic_count} semantic elements found"
+    })
+
+    # Tables/forms (3 points)
+    data_score = 3 if (analysis['tables'] > 0 or analysis['forms'] > 0) else 0
+    score += data_score
+    breakdown['categories'].append({
+        'name': 'Data Organization',
+        'earned': data_score,
+        'possible': 3,
+        'details': f"Tables: {analysis['tables']}, Forms: {analysis['forms']}"
+    })
+
+    # robots.txt and sitemap.xml (10 points)
+    crawl_score = 0
+    if analysis.get('robots_txt'):
+        crawl_score += 5
+    if analysis.get('sitemap_xml'):
+        crawl_score += 5
+    score += crawl_score
+    breakdown['categories'].append({
+        'name': 'Crawlability Files',
+        'earned': crawl_score,
+        'possible': 10,
+        'details': f"robots.txt: {'✓' if analysis.get('robots_txt') else '✗'}, sitemap.xml: {'✓' if analysis.get('sitemap_xml') else '✗'}"
+    })
+
+    # Open Graph/Twitter tags (8 points)
+    social_score = 0
+    if analysis.get('open_graph_tags'):
+        social_score += 4
+    if analysis.get('twitter_card_tags'):
+        social_score += 4
+    score += social_score
+    breakdown['categories'].append({
+        'name': 'Social Media Tags',
+        'earned': social_score,
+        'possible': 8,
+        'details': f"OG: {len(analysis.get('open_graph_tags', []))}, Twitter: {len(analysis.get('twitter_card_tags', []))}"
+    })
+
+    # Canonical tag (4 points)
+    canonical_score = 4 if analysis.get('canonical_tag') else 0
+    score += canonical_score
+    breakdown['categories'].append({
+        'name': 'Canonical Tag',
+        'earned': canonical_score,
+        'possible': 4,
+        'details': 'Present' if analysis.get('canonical_tag') else 'Missing'
+    })
+
+    # HTML lang and charset (5 points)
+    lang_score = 0
+    if analysis.get('html_lang'):
+        lang_score += 3
+    if analysis.get('meta_charset'):
+        lang_score += 2
+    score += lang_score
+    breakdown['categories'].append({
+        'name': 'Language & Charset',
+        'earned': lang_score,
+        'possible': 5,
+        'details': f"Lang: {analysis.get('html_lang', 'Missing')}, Charset: {analysis.get('meta_charset', 'Missing')}"
+    })
+
+    # Apply penalties for missing critical elements
+    penalties = 0
+    if not analysis.get('robots_txt'):
+        penalties += 3
+        breakdown['penalties'].append({'name': 'Missing robots.txt', 'points': -3})
+    if not analysis.get('sitemap_xml'):
+        penalties += 3
+        breakdown['penalties'].append({'name': 'Missing sitemap.xml', 'points': -3})
+    if not analysis.get('canonical_tag'):
+        penalties += 2
+        breakdown['penalties'].append({'name': 'Missing canonical tag', 'points': -2})
+    if not analysis.get('html_lang'):
+        penalties += 2
+        breakdown['penalties'].append({'name': 'Missing HTML lang attribute', 'points': -2})
+
+    score -= penalties
+
+    # Calculate totals
+    breakdown['total_earned'] = sum(cat['earned'] for cat in breakdown['categories'])
+    breakdown['total_penalties'] = -penalties
+    breakdown['final_score'] = max(0, min(score, max_score))
+
+    return breakdown['final_score'], breakdown
 
 if __name__ == '__main__':
     # Get port from environment variable for Render deployment

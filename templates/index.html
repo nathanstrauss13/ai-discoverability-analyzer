@@ -167,6 +167,14 @@
                 <p class="text-center text-gray-600" id="scoreDescription"></p>
             </div>
             
+            <!-- Score Breakdown -->
+            <div class="card px-8 pt-6 pb-8 mb-4">
+                <h2 class="text-2xl font-bold mb-6">Score Breakdown</h2>
+                <div id="scoreBreakdown" class="space-y-3">
+                    <!-- Score breakdown will be inserted here -->
+                </div>
+            </div>
+
             <!-- Technical Analysis -->
             <div class="card px-8 pt-6 pb-8 mb-4">
                 <h2 class="text-2xl font-bold mb-6">Technical Analysis</h2>
@@ -277,6 +285,58 @@
                 scoreDescription.textContent = 'Significant improvements recommended';
             }
 
+            // Display score breakdown if available
+            if (data.score_breakdown) {
+                const breakdownDiv = document.getElementById('scoreBreakdown');
+                breakdownDiv.innerHTML = '';
+
+                // Display categories
+                data.score_breakdown.categories.forEach(category => {
+                    const percentage = category.possible > 0 ? Math.round((category.earned / category.possible) * 100) : 0;
+                    const barColor = percentage >= 80 ? '#00a651' : percentage >= 50 ? '#ff9500' : '#ff3b30';
+                    
+                    const categoryDiv = document.createElement('div');
+                    categoryDiv.className = 'mb-4';
+                    categoryDiv.innerHTML = `
+                        <div class="flex justify-between mb-1">
+                            <span class="text-sm font-medium">${category.name}</span>
+                            <span class="text-sm">${category.earned}/${category.possible} points</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div class="h-2.5 rounded-full" style="width: ${percentage}%; background-color: ${barColor}; transition: width 1s ease-in-out;"></div>
+                        </div>
+                        <p class="text-xs text-gray-600 mt-1">${category.details}</p>
+                    `;
+                    breakdownDiv.appendChild(categoryDiv);
+                });
+
+                // Display penalties if any
+                if (data.score_breakdown.penalties && data.score_breakdown.penalties.length > 0) {
+                    const penaltyHeader = document.createElement('h3');
+                    penaltyHeader.className = 'text-lg font-semibold mt-6 mb-3 text-red-600';
+                    penaltyHeader.textContent = 'Penalties Applied';
+                    breakdownDiv.appendChild(penaltyHeader);
+
+                    data.score_breakdown.penalties.forEach(penalty => {
+                        const penaltyDiv = document.createElement('div');
+                        penaltyDiv.className = 'text-sm text-red-600 mb-1';
+                        penaltyDiv.innerHTML = `• ${penalty.name}: <strong>${penalty.points} points</strong>`;
+                        breakdownDiv.appendChild(penaltyDiv);
+                    });
+                }
+
+                // Display total
+                const totalDiv = document.createElement('div');
+                totalDiv.className = 'mt-6 pt-4 border-t-2 border-gray-200';
+                totalDiv.innerHTML = `
+                    <div class="flex justify-between font-semibold">
+                        <span>Total Score</span>
+                        <span>${data.score_breakdown.final_score}/100</span>
+                    </div>
+                `;
+                breakdownDiv.appendChild(totalDiv);
+            }
+
             // Display analysis metrics
             const analysisGrid = document.getElementById('analysisGrid');
             analysisGrid.innerHTML = '';
@@ -311,6 +371,36 @@
                     title: 'Semantic HTML',
                     value: Object.values(data.analysis.semantic_elements).reduce((a, b) => a + b, 0),
                     color: Object.values(data.analysis.semantic_elements).reduce((a, b) => a + b, 0) > 0 ? 'good' : 'bad'
+                },
+                {
+                    title: 'Robots.txt',
+                    value: data.analysis.robots_txt ? '✓' : '✗',
+                    color: data.analysis.robots_txt ? 'good' : 'bad'
+                },
+                {
+                    title: 'Sitemap.xml',
+                    value: data.analysis.sitemap_xml ? '✓' : '✗',
+                    color: data.analysis.sitemap_xml ? 'good' : 'bad'
+                },
+                {
+                    title: 'Open Graph Tags',
+                    value: data.analysis.open_graph_tags ? data.analysis.open_graph_tags.length : 0,
+                    color: data.analysis.open_graph_tags && data.analysis.open_graph_tags.length > 0 ? 'good' : 'warning'
+                },
+                {
+                    title: 'Twitter Card Tags',
+                    value: data.analysis.twitter_card_tags ? data.analysis.twitter_card_tags.length : 0,
+                    color: data.analysis.twitter_card_tags && data.analysis.twitter_card_tags.length > 0 ? 'good' : 'warning'
+                },
+                {
+                    title: 'Canonical Tag',
+                    value: data.analysis.canonical_tag ? '✓' : '✗',
+                    color: data.analysis.canonical_tag ? 'good' : 'bad'
+                },
+                {
+                    title: 'HTML Language',
+                    value: data.analysis.html_lang || 'Missing',
+                    color: data.analysis.html_lang ? 'good' : 'bad'
                 }
             ];
 
