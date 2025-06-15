@@ -20,16 +20,16 @@ The analyzer now checks for additional important factors:
 The scoring algorithm has been completely redesigned:
 
 #### New Scoring Distribution (100 points total):
-- Title & Meta Description: 10 points (was 15)
-- Heading Structure: 10 points (was 20)
-- Image Alt Text: 8 points (was 15)
-- Structured Data: 10 points (was 20)
-- Semantic HTML: 7 points (was 20)
-- Data Organization (Tables/Forms): 3 points (was 10)
-- **NEW** Robots.txt & Sitemap.xml: 10 points
-- **NEW** Open Graph/Twitter Tags: 8 points
-- **NEW** Canonical Tag: 4 points
-- **NEW** Language & Charset: 5 points
+- Title & Meta Description: 12 points (was 15)
+- Heading Structure: 12 points (was 20)
+- Image Alt Text: 10 points (was 15)
+- Structured Data: 15 points (was 20)
+- Semantic HTML: 10 points (was 20)
+- Data Organization (Tables/Forms): 5 points (was 10)
+- **NEW** Robots.txt & Sitemap.xml: 12 points
+- **NEW** Open Graph/Twitter Tags: 10 points
+- **NEW** Canonical Tag: 6 points
+- **NEW** Language & Charset: 8 points
 
 #### Penalty System:
 Points are now deducted for missing critical elements:

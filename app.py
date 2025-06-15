@@ -344,137 +344,137 @@ def calculate_ai_readiness_score(analysis):
         'final_score': 0
     }
 
-    # Title and meta description (10 points)
+    # Title and meta description (12 points)
     title_score = 0
     if analysis['title'] and analysis['title'] != 'No title found':
-        title_score += 4
+        title_score += 5
     if analysis['meta_description']:
-        title_score += 6
+        title_score += 7
     score += title_score
     breakdown['categories'].append({
         'name': 'Title & Meta Description',
         'earned': title_score,
-        'possible': 10,
-        'details': f"Title: {'✓' if title_score >= 4 else '✗'}, Meta Description: {'✓' if analysis['meta_description'] else '✗'}"
+        'possible': 12,
+        'details': f"Title: {'✓' if title_score >= 5 else '✗'}, Meta Description: {'✓' if analysis['meta_description'] else '✗'}"
     })
 
-    # Heading structure (10 points)
+    # Heading structure (12 points)
     heading_score = 0
     if len(analysis['headings']['h1']) == 1:
-        heading_score += 5
+        heading_score += 6
     elif len(analysis['headings']['h1']) > 0:
-        heading_score += 2
-    if len(analysis['headings']['h2']) > 0:
         heading_score += 3
+    if len(analysis['headings']['h2']) > 0:
+        heading_score += 6
     score += heading_score
     breakdown['categories'].append({
         'name': 'Heading Structure',
         'earned': heading_score,
-        'possible': 10,
+        'possible': 12,
         'details': f"H1: {len(analysis['headings']['h1'])}, H2: {len(analysis['headings']['h2'])}"
     })
 
-    # Images with alt text (8 points)
+    # Images with alt text (10 points)
     image_score = 0
     if analysis['images']['total'] > 0:
         alt_ratio = analysis['images']['with_alt'] / analysis['images']['total']
-        image_score = int(8 * alt_ratio)
+        image_score = int(10 * alt_ratio)
     else:
-        image_score = 8
+        image_score = 10
     score += image_score
     breakdown['categories'].append({
         'name': 'Image Alt Text',
         'earned': image_score,
-        'possible': 8,
+        'possible': 10,
         'details': f"{analysis['images']['with_alt']}/{analysis['images']['total']} images have alt text" if analysis['images']['total'] > 0 else "No images found"
     })
 
-    # Structured data (10 points)
-    structured_score = 10 if analysis['structured_data'] else 0
+    # Structured data (15 points)
+    structured_score = 15 if analysis['structured_data'] else 0
     score += structured_score
     breakdown['categories'].append({
         'name': 'Structured Data',
         'earned': structured_score,
-        'possible': 10,
+        'possible': 15,
         'details': 'JSON-LD present' if analysis['structured_data'] else 'No structured data found'
     })
 
-    # Semantic HTML (7 points)
+    # Semantic HTML (10 points)
     semantic_count = sum(analysis['semantic_elements'].values())
     semantic_score = 0
     if semantic_count >= 5:
-        semantic_score = 7
+        semantic_score = 10
     elif semantic_count >= 3:
-        semantic_score = 5
+        semantic_score = 7
     elif semantic_count >= 1:
-        semantic_score = 3
+        semantic_score = 4
     score += semantic_score
     breakdown['categories'].append({
         'name': 'Semantic HTML',
         'earned': semantic_score,
-        'possible': 7,
+        'possible': 10,
         'details': f"{semantic_count} semantic elements found"
     })
 
-    # Tables/forms (3 points)
-    data_score = 3 if (analysis['tables'] > 0 or analysis['forms'] > 0) else 0
+    # Tables/forms (5 points)
+    data_score = 5 if (analysis['tables'] > 0 or analysis['forms'] > 0) else 0
     score += data_score
     breakdown['categories'].append({
         'name': 'Data Organization',
         'earned': data_score,
-        'possible': 3,
+        'possible': 5,
         'details': f"Tables: {analysis['tables']}, Forms: {analysis['forms']}"
     })
 
-    # robots.txt and sitemap.xml (10 points)
+    # robots.txt and sitemap.xml (12 points)
     crawl_score = 0
     if analysis.get('robots_txt'):
-        crawl_score += 5
+        crawl_score += 6
     if analysis.get('sitemap_xml'):
-        crawl_score += 5
+        crawl_score += 6
     score += crawl_score
     breakdown['categories'].append({
         'name': 'Crawlability Files',
         'earned': crawl_score,
-        'possible': 10,
+        'possible': 12,
         'details': f"robots.txt: {'✓' if analysis.get('robots_txt') else '✗'}, sitemap.xml: {'✓' if analysis.get('sitemap_xml') else '✗'}"
     })
 
-    # Open Graph/Twitter tags (8 points)
+    # Open Graph/Twitter tags (10 points)
     social_score = 0
     if analysis.get('open_graph_tags'):
-        social_score += 4
+        social_score += 5
     if analysis.get('twitter_card_tags'):
-        social_score += 4
+        social_score += 5
     score += social_score
     breakdown['categories'].append({
         'name': 'Social Media Tags',
         'earned': social_score,
-        'possible': 8,
+        'possible': 10,
         'details': f"OG: {len(analysis.get('open_graph_tags', []))}, Twitter: {len(analysis.get('twitter_card_tags', []))}"
     })
 
-    # Canonical tag (4 points)
-    canonical_score = 4 if analysis.get('canonical_tag') else 0
+    # Canonical tag (6 points)
+    canonical_score = 6 if analysis.get('canonical_tag') else 0
     score += canonical_score
     breakdown['categories'].append({
         'name': 'Canonical Tag',
         'earned': canonical_score,
-        'possible': 4,
+        'possible': 6,
         'details': 'Present' if analysis.get('canonical_tag') else 'Missing'
     })
 
-    # HTML lang and charset (5 points)
+    # HTML lang and charset (8 points)
     lang_score = 0
     if analysis.get('html_lang'):
-        lang_score += 3
+        lang_score += 5
     if analysis.get('meta_charset'):
-        lang_score += 2
+        lang_score += 3
     score += lang_score
     breakdown['categories'].append({
         'name': 'Language & Charset',
         'earned': lang_score,
-        'possible': 5,
+        'possible': 8,
         'details': f"Lang: {analysis.get('html_lang', 'Missing')}, Charset: {analysis.get('meta_charset', 'Missing')}"
     })
 
