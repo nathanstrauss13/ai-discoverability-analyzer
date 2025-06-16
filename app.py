@@ -30,7 +30,28 @@ else:
     print("Warning: ANTHROPIC_API_KEY not found or empty. AI recommendations will be disabled.")
 
 def fetch_webpage_content(url):
-    """Fetch and parse webpage content."""
+    """Fetch and parse webpage content from HTTP(S) or local file:// URLs."""
+    
+    # Handle local file URLs
+    if url.startswith('file://'):
+        try:
+            # Convert file:// URL to local path
+            from urllib.parse import unquote
+            file_path = url.replace('file://', '')
+            # Handle URL encoding (like %20 for spaces)
+            file_path = unquote(file_path)
+            
+            # Read the local file
+            with open(file_path, 'r', encoding='utf-8') as file:
+                return file.read()
+        except FileNotFoundError:
+            print(f"File not found: {file_path}")
+            return None
+        except Exception as e:
+            print(f"Error reading local file: {e}")
+            return None
+    
+    # Handle HTTP(S) URLs
     try:
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -103,18 +124,19 @@ def analyze_webpage_structure(html_content, url):
         'meta_charset': ''
     }
 
-    # Check robots.txt and sitemap.xml presence
-    try:
-        parsed_url = urlparse(url)
-        base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
-        robots_resp = requests.get(urljoin(base_url, '/robots.txt'), timeout=5)
-        if robots_resp.status_code == 200 and 'User-agent' in robots_resp.text:
-            analysis['robots_txt'] = True
-        sitemap_resp = requests.get(urljoin(base_url, '/sitemap.xml'), timeout=5)
-        if sitemap_resp.status_code == 200 and ('<urlset' in sitemap_resp.text or '<sitemapindex' in sitemap_resp.text):
-            analysis['sitemap_xml'] = True
-    except Exception as e:
-        pass  # Don't fail analysis if these checks error
+    # Check robots.txt and sitemap.xml presence (only for HTTP(S) URLs)
+    if url.startswith(('http://', 'https://')):
+        try:
+            parsed_url = urlparse(url)
+            base_url = f"{parsed_url.scheme}://{parsed_url.netloc}"
+            robots_resp = requests.get(urljoin(base_url, '/robots.txt'), timeout=5)
+            if robots_resp.status_code == 200 and 'User-agent' in robots_resp.text:
+                analysis['robots_txt'] = True
+            sitemap_resp = requests.get(urljoin(base_url, '/sitemap.xml'), timeout=5)
+            if sitemap_resp.status_code == 200 and ('<urlset' in sitemap_resp.text or '<sitemapindex' in sitemap_resp.text):
+                analysis['sitemap_xml'] = True
+        except Exception as e:
+            pass  # Don't fail analysis if these checks error
 
     # Open Graph and Twitter Card tags
     og_tags = soup.find_all('meta', attrs={'property': re.compile(r'^og:', re.I)})
@@ -297,8 +319,8 @@ def analyze():
     if not url:
         return jsonify({'error': 'Please provide a URL'}), 400
     
-    # Add protocol if missing
-    if not url.startswith(('http://', 'https://')):
+    # Add protocol if missing (but not for file:// URLs)
+    if not url.startswith(('http://', 'https://', 'file://')):
         url = 'https://' + url
     
     # Fetch webpage content
