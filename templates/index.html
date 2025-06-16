@@ -401,6 +401,31 @@
                     title: 'HTML Language',
                     value: data.analysis.html_lang || 'Missing',
                     color: data.analysis.html_lang ? 'good' : 'bad'
+                },
+                {
+                    title: 'FAQ Content',
+                    value: data.analysis.faq_detected ? '✓' : '✗',
+                    color: data.analysis.faq_detected ? 'good' : 'warning'
+                },
+                {
+                    title: 'Q&A Schema',
+                    value: data.analysis.qa_schema ? '✓' : '✗',
+                    color: data.analysis.qa_schema ? 'good' : 'warning'
+                },
+                {
+                    title: 'llms.txt File',
+                    value: data.analysis.llms_txt ? '✓' : '✗',
+                    color: data.analysis.llms_txt ? 'good' : 'warning'
+                },
+                {
+                    title: 'List Elements',
+                    value: (data.analysis.ordered_lists || 0) + (data.analysis.unordered_lists || 0) + (data.analysis.definition_lists || 0),
+                    color: ((data.analysis.ordered_lists || 0) + (data.analysis.unordered_lists || 0) + (data.analysis.definition_lists || 0)) > 0 ? 'good' : 'warning'
+                },
+                {
+                    title: 'Organization Schema',
+                    value: data.analysis.organization_schema ? '✓' : '✗',
+                    color: data.analysis.organization_schema ? 'good' : 'warning'
                 }
             ];
 

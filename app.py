@@ -128,7 +128,16 @@ def analyze_webpage_structure(html_content, url):
         'twitter_card_tags': [],
         'canonical_tag': '',
         'html_lang': '',
-        'meta_charset': ''
+        'meta_charset': '',
+        # AI Agent optimization fields
+        'faq_detected': False,
+        'qa_schema': False,
+        'llms_txt': False,
+        'definition_lists': 0,
+        'ordered_lists': 0,
+        'unordered_lists': 0,
+        'review_schema': False,
+        'organization_schema': False
     }
 
     # Check robots.txt and sitemap.xml presence (only for HTTP(S) URLs)
@@ -213,6 +222,43 @@ def analyze_webpage_structure(html_content, url):
     for element in analysis['semantic_elements']:
         analysis['semantic_elements'][element] = len(soup.find_all(element))
     
+    # AI Agent optimization checks
+    # Check for FAQ patterns
+    faq_indicators = ['faq', 'frequently asked', 'questions', 'q&a', 'q & a']
+    page_text = soup.get_text().lower()
+    for indicator in faq_indicators:
+        if indicator in page_text:
+            analysis['faq_detected'] = True
+            break
+    
+    # Check for Q&A schema
+    for script in json_ld:
+        try:
+            import json
+            data = json.loads(script.string)
+            if isinstance(data, dict) and data.get('@type') in ['FAQPage', 'QAPage', 'Question']:
+                analysis['qa_schema'] = True
+            elif isinstance(data, dict) and data.get('@type') == 'Review':
+                analysis['review_schema'] = True
+            elif isinstance(data, dict) and data.get('@type') in ['Organization', 'Corporation', 'LocalBusiness']:
+                analysis['organization_schema'] = True
+        except:
+            pass
+    
+    # Check for llms.txt file (only for HTTP(S) URLs)
+    if url.startswith(('http://', 'https://')):
+        try:
+            llms_resp = requests.get(urljoin(base_url, '/llms.txt'), timeout=5)
+            if llms_resp.status_code == 200:
+                analysis['llms_txt'] = True
+        except:
+            pass
+    
+    # Count list elements for content structure
+    analysis['definition_lists'] = len(soup.find_all('dl'))
+    analysis['ordered_lists'] = len(soup.find_all('ol'))
+    analysis['unordered_lists'] = len(soup.find_all('ul'))
+    
     return analysis
 
 def generate_ai_recommendations(analysis):
@@ -279,6 +325,14 @@ Based on the technical analysis, here are general recommendations:
     - Open Graph tags: {len(analysis.get('open_graph_tags', []))} found
     - Twitter Card tags: {len(analysis.get('twitter_card_tags', []))} found
     
+    AI Agent Optimization:
+    - FAQ content detected: {'Yes' if analysis.get('faq_detected') else 'No'}
+    - Q&A schema markup: {'Yes' if analysis.get('qa_schema') else 'No'}
+    - llms.txt file: {'Present' if analysis.get('llms_txt') else 'Missing'}
+    - Organization schema: {'Yes' if analysis.get('organization_schema') else 'No'}
+    - List elements: {analysis.get('ordered_lists', 0) + analysis.get('unordered_lists', 0) + analysis.get('definition_lists', 0)} total
+      (OL: {analysis.get('ordered_lists', 0)}, UL: {analysis.get('unordered_lists', 0)}, DL: {analysis.get('definition_lists', 0)})
+    
     Data Organization:
     - Tables: {analysis['tables']}
     - Forms: {analysis['forms']}
@@ -290,18 +344,32 @@ Based on the technical analysis, here are general recommendations:
             max_tokens=1500,
             messages=[{
                 "role": "user",
-                "content": f"""Based on this website analysis, provide specific recommendations to improve the page's discoverability and crawlability for AI/LLM systems. Focus on practical, actionable improvements.
+                "content": f"""Based on this website analysis, provide specific recommendations to improve the page's discoverability and crawlability for AI/LLM systems. 
+
+IMPORTANT CONTEXT: 
+- 80% of consumers now rely on AI-generated summaries (zero-click searches)
+- 58% have replaced search engines with AI for recommendations
+- 90%+ of AI responses come from third-party sources, not brand sites
+- AI agents evaluate based on facts, not emotions
+- Brands are invisible in AI responses unless optimized for machine comprehension
 
 {summary}
 
 Please structure your response with:
-1. Top 3 Priority Improvements (most impactful changes)
-2. Content Structure Recommendations
-3. Technical SEO Improvements
-4. Accessibility Enhancements
-5. Quick Wins (easy changes with good impact)
+1. Top 3 Priority Improvements (most impactful for AI visibility)
+2. Zero-Click Optimization (how to appear in AI summaries)
+3. Content Structure for AI Agents (answer-focused content)
+4. Third-Party Authority Building (external validation)
+5. Quick Wins (easy changes with good AI impact)
 
-Keep recommendations concise and actionable. Focus on changes that will help AI systems better understand and process the content."""
+Focus on:
+- Creating FAQ/Q&A content with direct answers
+- Implementing structured data for machine parsing
+- Building external authority through PR and citations
+- Using lists, definitions, and factual content
+- Adding llms.txt file for AI crawler guidance
+
+Keep recommendations specific and actionable for improving AI agent comprehension and zero-click visibility."""
             }]
         )
         
