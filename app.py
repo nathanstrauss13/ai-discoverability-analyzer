@@ -306,11 +306,18 @@ def analyze():
     if not html_content:
         error_msg = (
             'Unable to fetch the webpage. This could be because:\n'
-            '• The website blocks automated requests\n'
+            '• The website blocks automated requests (common with corporate sites)\n'
             '• The URL is incorrect or inaccessible\n'
             '• The website requires authentication\n\n'
-            'Try analyzing a different website, or use the standalone.html file '
-            'to view general AI optimization recommendations.'
+            '**For sites that block automated access (like signetjewelers.com):**\n'
+            '1. Save the webpage locally (Ctrl+S / Cmd+S in your browser)\n'
+            '2. Open the saved HTML file in a browser\n'
+            '3. Use the file:// URL in this analyzer\n\n'
+            'Alternatively, try analyzing sites without aggressive bot protection:\n'
+            '• Personal blogs and portfolios\n'
+            '• Documentation sites\n'
+            '• Open source project pages\n'
+            '• Educational websites'
         )
         return jsonify({'error': error_msg}), 400
     
