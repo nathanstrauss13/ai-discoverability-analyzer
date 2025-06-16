@@ -63,6 +63,13 @@ def fetch_webpage_content(url):
         }
         response = requests.get(url, headers=headers, timeout=15, allow_redirects=True)
         response.raise_for_status()
+        
+        # Check if the response is a PDF
+        content_type = response.headers.get('Content-Type', '').lower()
+        if 'application/pdf' in content_type:
+            print(f"PDF detected via Content-Type header: {content_type}")
+            return None
+        
         return response.text
     except requests.exceptions.HTTPError as e:
         if e.response.status_code == 403:
@@ -322,6 +329,24 @@ def analyze():
     # Add protocol if missing (but not for file:// URLs)
     if not url.startswith(('http://', 'https://', 'file://')):
         url = 'https://' + url
+    
+    # Check if URL points to a PDF
+    if url.lower().endswith('.pdf') or 'application/pdf' in url.lower():
+        error_msg = (
+            '**PDF files cannot be analyzed directly.**\n\n'
+            'This tool is designed to analyze HTML web pages, not PDF documents.\n\n'
+            '**Options for PDF content:**\n'
+            '1. If the PDF is a report/document on a website, analyze the webpage that hosts it instead\n'
+            '2. Convert the PDF to HTML using online tools, then analyze the HTML\n'
+            '3. Look for an HTML version of the same content\n\n'
+            '**Why PDFs are challenging for AI discoverability:**\n'
+            '• PDFs are primarily designed for printing, not web crawling\n'
+            '• They lack semantic HTML structure\n'
+            '• No meta tags, headings hierarchy, or structured data\n'
+            '• Limited accessibility for screen readers and crawlers\n\n'
+            'For better AI discoverability, content should be published as HTML web pages.'
+        )
+        return jsonify({'error': error_msg}), 400
     
     # Fetch webpage content
     html_content = fetch_webpage_content(url)
