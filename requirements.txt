@@ -5,3 +5,8 @@ anthropic==0.34.2
 python-dotenv==1.0.0
 gunicorn==21.2.0
 httpx==0.27.0
+
+# Optional: For browser automation to bypass anti-bot protection
+# Uncomment these if you want to use browser_analyzer.py
+# selenium==4.15.0
+# webdriver-manager==4.0.1
