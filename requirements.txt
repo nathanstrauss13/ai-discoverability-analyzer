@@ -47,7 +47,9 @@ openpyxl==3.1.2  # Excel export
 # selenium==4.15.0
 # webdriver-manager==4.0.1
 
-# Content Analysis Dependencies
-nltk==3.8.1
-textstat==0.7.3
-spacy==3.7.2
+# Content Analysis Dependencies (Optional - may have compatibility issues)
+# Note: These enhance content analysis but are not required for core functionality
+# If deployment fails, comment these out:
+# nltk==3.8.1
+# textstat==0.7.3
+# spacy==3.7.2
