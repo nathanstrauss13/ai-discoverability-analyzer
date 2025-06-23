@@ -103,6 +103,65 @@
             margin-bottom: 1rem;
             white-space: pre-line;
         }
+        .sub-score {
+            display: inline-block;
+            padding: 0.5rem 1rem;
+            border-radius: 0.25rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+        .content-metric {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 1rem;
+            margin-bottom: 0.5rem;
+            border-radius: 0.25rem;
+        }
+        .recommendation-section {
+            margin-bottom: 1.5rem;
+        }
+        #recommendations h3 {
+            color: var(--primary-color);
+            margin-top: 1.5rem;
+            margin-bottom: 0.75rem;
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+        #recommendations p {
+            margin-bottom: 1rem;
+            line-height: 1.6;
+        }
+        #recommendations ul {
+            margin-bottom: 1rem;
+        }
+        #recommendations li {
+            margin-bottom: 0.5rem;
+            line-height: 1.6;
+        }
+        #recommendations strong {
+            font-weight: 600;
+            color: #1a1a1a;
+        }
+        .priority-badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 0.25rem;
+            font-size: 0.875rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+        .priority-high {
+            background-color: #fee2e2;
+            color: #dc2626;
+        }
+        .priority-medium {
+            background-color: #fef3c7;
+            color: #d97706;
+        }
+        .priority-low {
+            background-color: #dbeafe;
+            color: #2563eb;
+        }
         input[type="url"] {
             border: 1px solid #d1d5db;
             transition: border-color 0.3s ease;
@@ -165,6 +224,11 @@
                 </div>
                 <p class="text-center text-lg font-semibold" id="scoreLabel">Loading...</p>
                 <p class="text-center text-gray-600" id="scoreDescription"></p>
+                
+                <!-- Sub-scores -->
+                <div class="text-center mt-6" id="subScores">
+                    <!-- Sub-scores will be inserted here -->
+                </div>
             </div>
             
             <!-- Score Breakdown -->
@@ -183,10 +247,18 @@
                 </div>
             </div>
             
+            <!-- Content Quality Analysis -->
+            <div class="card px-8 pt-6 pb-8 mb-4" id="contentAnalysisSection" style="display: none;">
+                <h2 class="text-2xl font-bold mb-6">Content Quality Analysis</h2>
+                <div id="contentMetrics">
+                    <!-- Content metrics will be inserted here -->
+                </div>
+            </div>
+            
             <!-- Recommendations -->
             <div class="card px-8 pt-6 pb-8 mb-4">
                 <h2 class="text-2xl font-bold mb-6">AI Optimization Recommendations</h2>
-                <div class="prose max-w-none" style="white-space: pre-wrap; line-height: 1.8;" id="recommendations">
+                <div id="recommendations" class="max-w-none">
                     <!-- Recommendations will be inserted here -->
                 </div>
             </div>
@@ -336,6 +408,19 @@
                 `;
                 breakdownDiv.appendChild(totalDiv);
             }
+            
+            // Display sub-scores
+            if (data.score_breakdown.technical_score !== undefined && data.score_breakdown.content_score !== undefined) {
+                const subScoresDiv = document.getElementById('subScores');
+                subScoresDiv.innerHTML = `
+                    <div class="sub-score" style="background-color: #e0f2fe; color: #0369a1;">
+                        Technical Score: ${data.score_breakdown.technical_score}/100
+                    </div>
+                    <div class="sub-score" style="background-color: #f0fdf4; color: #15803d;">
+                        Content Score: ${data.score_breakdown.content_score}/50
+                    </div>
+                `;
+            }
 
             // Display analysis metrics
             const analysisGrid = document.getElementById('analysisGrid');
@@ -439,11 +524,172 @@
                 analysisGrid.appendChild(card);
             });
 
-            // Display recommendations
-            document.getElementById('recommendations').textContent = data.recommendations;
+            // Display recommendations with enhanced formatting
+            const recommendationsDiv = document.getElementById('recommendations');
+            if (data.recommendations.includes('##')) {
+                // Format structured recommendations
+                let formattedContent = data.recommendations;
+                
+                // Replace ## headers with styled h3 tags
+                formattedContent = formattedContent.replace(/##\s+(\d+\.\s+[^\n]+)/g, '<h3 class="text-xl font-semibold mt-6 mb-3 text-green-800">$1</h3>');
+                formattedContent = formattedContent.replace(/##\s+([^\n]+)/g, '<h3 class="text-xl font-semibold mt-6 mb-3 text-green-800">$1</h3>');
+                
+                // Format bullet points
+                formattedContent = formattedContent.replace(/^-\s+(.+)$/gm, '<li class="ml-4 mb-2">$1</li>');
+                
+                // Wrap consecutive li elements in ul
+                formattedContent = formattedContent.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, function(match) {
+                    return '<ul class="list-disc list-inside mb-4">' + match + '</ul>';
+                });
+                
+                // Format bold text
+                formattedContent = formattedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+                
+                // Format paragraphs
+                formattedContent = formattedContent.split('\n\n').map(para => {
+                    para = para.trim();
+                    if (para && !para.startsWith('<h3') && !para.startsWith('<ul')) {
+                        return '<p class="mb-4">' + para + '</p>';
+                    }
+                    return para;
+                }).join('\n');
+                
+                // Clean up extra line breaks
+                formattedContent = formattedContent.replace(/\n{3,}/g, '\n\n');
+                formattedContent = formattedContent.replace(/<\/p>\s*<p/g, '</p><p');
+                
+                recommendationsDiv.innerHTML = formattedContent;
+            } else {
+                // Fallback for non-structured recommendations
+                recommendationsDiv.innerHTML = '<p>' + data.recommendations.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
+            }
+            
+            // Display content analysis if available
+            if (data.analysis.content_analysis) {
+                displayContentAnalysis(data.analysis.content_analysis);
+            }
 
             // Scroll to results
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function displayContentAnalysis(contentAnalysis) {
+            const contentSection = document.getElementById('contentAnalysisSection');
+            const contentMetrics = document.getElementById('contentMetrics');
+            
+            contentSection.style.display = 'block';
+            contentMetrics.innerHTML = '';
+            
+            // Readability
+            if (contentAnalysis.readability) {
+                const readabilityDiv = document.createElement('div');
+                readabilityDiv.className = 'content-metric';
+                readabilityDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">Readability</h4>
+                    <p><strong>Score:</strong> ${contentAnalysis.readability.flesch_reading_ease || 'N/A'}</p>
+                    <p><strong>Grade Level:</strong> ${contentAnalysis.readability.flesch_kincaid_grade || 'N/A'}</p>
+                    <p><strong>Interpretation:</strong> ${contentAnalysis.readability.interpretation}</p>
+                    <p><strong>AI Friendly:</strong> ${contentAnalysis.readability.ai_friendly ? '✓ Yes' : '✗ No'}</p>
+                `;
+                contentMetrics.appendChild(readabilityDiv);
+            }
+            
+            // Content Quality
+            if (contentAnalysis.content_quality) {
+                const qualityDiv = document.createElement('div');
+                qualityDiv.className = 'content-metric';
+                qualityDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">Content Quality</h4>
+                    <p><strong>Word Count:</strong> ${contentAnalysis.content_quality.word_count}</p>
+                    <p><strong>Avg Sentence Length:</strong> ${contentAnalysis.content_quality.avg_sentence_length} words</p>
+                    <p><strong>Vocabulary Diversity:</strong> ${(contentAnalysis.content_quality.vocabulary_diversity * 100).toFixed(1)}%</p>
+                    <p><strong>Quality Score:</strong> ${contentAnalysis.content_quality.quality_score}/100</p>
+                `;
+                contentMetrics.appendChild(qualityDiv);
+            }
+            
+            // Promotional Language
+            if (contentAnalysis.promotional_language) {
+                const promoDiv = document.createElement('div');
+                promoDiv.className = 'content-metric';
+                const promoClass = contentAnalysis.promotional_language.is_promotional ? 'bad' : 'good';
+                promoDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">Promotional Language</h4>
+                    <p class="${promoClass}"><strong>Status:</strong> ${contentAnalysis.promotional_language.recommendation}</p>
+                    <p><strong>Promotional Density:</strong> ${contentAnalysis.promotional_language.promotional_density}%</p>
+                    <p><strong>Superlatives Found:</strong> ${contentAnalysis.promotional_language.superlative_count}</p>
+                    ${contentAnalysis.promotional_language.found_keywords.length > 0 ? 
+                        `<p><strong>Keywords:</strong> ${contentAnalysis.promotional_language.found_keywords.slice(0, 5).join(', ')}</p>` : ''}
+                `;
+                contentMetrics.appendChild(promoDiv);
+            }
+            
+            // Factual Content
+            if (contentAnalysis.factual_content) {
+                const factualDiv = document.createElement('div');
+                factualDiv.className = 'content-metric';
+                const factClass = contentAnalysis.factual_content.is_fact_based ? 'good' : 'warning';
+                factualDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">Factual Content</h4>
+                    <p class="${factClass}"><strong>Factual Score:</strong> ${contentAnalysis.factual_content.factual_score}/100</p>
+                    <p><strong>Statistics Count:</strong> ${contentAnalysis.factual_content.statistics_count}</p>
+                    <p><strong>Citations:</strong> ${contentAnalysis.factual_content.citation_count}</p>
+                    <p><strong>Factual Indicators:</strong> ${contentAnalysis.factual_content.factual_indicators}</p>
+                `;
+                contentMetrics.appendChild(factualDiv);
+            }
+            
+            // Answer Optimization
+            if (contentAnalysis.answer_optimization) {
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'content-metric';
+                answerDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">Answer Optimization</h4>
+                    <p class="${contentAnalysis.answer_optimization.has_faq_section ? 'good' : 'bad'}">
+                        <strong>FAQ Section:</strong> ${contentAnalysis.answer_optimization.has_faq_section ? '✓ Yes' : '✗ No'}
+                    </p>
+                    <p><strong>Q&A Pairs:</strong> ${contentAnalysis.answer_optimization.qa_pairs_count}</p>
+                    <p><strong>Definitions:</strong> ${contentAnalysis.answer_optimization.definition_count}</p>
+                    <p><strong>How-to Sections:</strong> ${contentAnalysis.answer_optimization.how_to_sections}</p>
+                    <p><strong>Lists:</strong> OL: ${contentAnalysis.answer_optimization.list_usage.ordered}, 
+                       UL: ${contentAnalysis.answer_optimization.list_usage.unordered}, 
+                       DL: ${contentAnalysis.answer_optimization.list_usage.definition}</p>
+                `;
+                contentMetrics.appendChild(answerDiv);
+            }
+            
+            // Credibility
+            if (contentAnalysis.credibility_signals) {
+                const credDiv = document.createElement('div');
+                credDiv.className = 'content-metric';
+                credDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">Credibility & Authority</h4>
+                    <p><strong>Credibility Score:</strong> ${contentAnalysis.credibility_signals.credibility_score}/100</p>
+                    <p class="${contentAnalysis.credibility_signals.has_author_info ? 'good' : 'warning'}">
+                        <strong>Author Info:</strong> ${contentAnalysis.credibility_signals.has_author_info ? '✓ Yes' : '✗ No'}
+                    </p>
+                    <p><strong>External Links:</strong> ${contentAnalysis.credibility_signals.external_links}</p>
+                    <p><strong>Quality Links:</strong> ${contentAnalysis.credibility_signals.quality_links}</p>
+                    <p><strong>Credibility Markers:</strong> ${contentAnalysis.credibility_signals.credibility_markers}</p>
+                `;
+                contentMetrics.appendChild(credDiv);
+            }
+            
+            // Brevity
+            if (contentAnalysis.brevity_score) {
+                const brevityDiv = document.createElement('div');
+                brevityDiv.className = 'content-metric';
+                const brevityClass = contentAnalysis.brevity_score.is_concise ? 'good' : 'warning';
+                brevityDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">Content Brevity</h4>
+                    <p class="${brevityClass}"><strong>Status:</strong> ${contentAnalysis.brevity_score.recommendation}</p>
+                    <p><strong>Brevity Score:</strong> ${contentAnalysis.brevity_score.brevity_score}/100</p>
+                    <p><strong>Avg Sentence Length:</strong> ${contentAnalysis.brevity_score.avg_sentence_length} words</p>
+                    <p><strong>Filler Word Density:</strong> ${contentAnalysis.brevity_score.filler_word_density}%</p>
+                    <p><strong>Redundant Phrases:</strong> ${contentAnalysis.brevity_score.redundant_phrases}</p>
+                `;
+                contentMetrics.appendChild(brevityDiv);
+            }
         }
 
         function showError(message) {

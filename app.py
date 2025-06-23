@@ -8,6 +8,7 @@ from datetime import datetime
 from anthropic import Anthropic
 from dotenv import load_dotenv
 import sys
+from content_analyzer import ContentAnalyzer
 
 # Load .env file if it exists (for local development)
 load_dotenv()
@@ -85,6 +86,9 @@ def fetch_webpage_content(url):
 def analyze_webpage_structure(html_content, url):
     """Analyze the structure and content of a webpage, including advanced discoverability checks."""
     soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Initialize content analyzer
+    content_analyzer = ContentAnalyzer()
 
     # Initialize analysis dictionary with new fields
     analysis = {
@@ -259,15 +263,36 @@ def analyze_webpage_structure(html_content, url):
     analysis['ordered_lists'] = len(soup.find_all('ol'))
     analysis['unordered_lists'] = len(soup.find_all('ul'))
     
+    # Add comprehensive content analysis
+    analysis['content_analysis'] = content_analyzer.analyze_content(html_content, soup)
+    
     return analysis
 
 def generate_ai_recommendations(analysis):
     """Use Claude to generate specific recommendations based on the analysis."""
     
     if not anthropic:
-        return """AI-powered recommendations are not available (API key not configured).
-
-Based on the technical analysis, here are general recommendations:
+        # Generate content recommendations without AI
+        content_analyzer = ContentAnalyzer()
+        content_recs = []
+        
+        if 'content_analysis' in analysis:
+            content_recs = content_analyzer.generate_content_recommendations(
+                analysis['content_analysis'], 
+                analysis
+            )
+        
+        # Format recommendations
+        rec_text = "AI-powered recommendations are not available (API key not configured).\n\n"
+        rec_text += "## Content Optimization Recommendations\n\n"
+        
+        for rec in content_recs:
+            rec_text += f"### {rec['category']} ({rec['priority']} Priority)\n"
+            rec_text += f"**Issue:** {rec['issue']}\n"
+            rec_text += f"**Action:** {rec['action']}\n"
+            rec_text += f"**Impact:** {rec['impact']}\n\n"
+        
+        rec_text += """## Technical Recommendations
 
 1. **Top Priority Improvements:**
    - Ensure you have exactly one H1 tag per page
@@ -284,19 +309,33 @@ Based on the technical analysis, here are general recommendations:
    - Add alt text to all images
    - Implement Open Graph and Twitter Card tags
    - Add canonical tags to prevent duplicate content issues
-   - Specify language with html lang attribute
-
-4. **Accessibility:**
-   - Ensure all interactive elements are keyboard accessible
-   - Use ARIA labels where appropriate
-   - Maintain good color contrast
-
-5. **Quick Wins:**
-   - Add charset meta tag
-   - Compress images
-   - Minify CSS and JavaScript"""
+   - Specify language with html lang attribute"""
+        
+        return rec_text
     
     # Create a comprehensive summary of the analysis for Claude
+    content_summary = ""
+    if 'content_analysis' in analysis:
+        ca = analysis['content_analysis']
+        content_summary = f"""
+    
+    Content Quality Analysis:
+    - Readability: {ca['readability'].get('interpretation', 'N/A')} (Score: {ca['readability'].get('flesch_reading_ease', 'N/A')})
+    - Word Count: {ca['content_quality'].get('word_count', 0)}
+    - Average Sentence Length: {ca['content_quality'].get('avg_sentence_length', 0)}
+    - Promotional Language: {ca['promotional_language'].get('recommendation', 'N/A')}
+    - Factual Content Score: {ca['factual_content'].get('factual_score', 0)}/100
+    - Statistics/Numbers: {ca['factual_content'].get('statistics_count', 0)}
+    - Citations: {ca['factual_content'].get('citation_count', 0)}
+    - FAQ Section: {'Yes' if ca['answer_optimization'].get('has_faq_section') else 'No'}
+    - Q&A Pairs: {ca['answer_optimization'].get('qa_pairs_count', 0)}
+    - Credibility Score: {ca['credibility_signals'].get('credibility_score', 0)}/100
+    - Author Info: {'Yes' if ca['credibility_signals'].get('has_author_info') else 'No'}
+    - Quality External Links: {ca['credibility_signals'].get('quality_links', 0)}
+    - Brevity Score: {ca['brevity_score'].get('brevity_score', 0)}/100
+    - Content Structure: {'Has summary' if ca['content_structure'].get('has_summary') else 'No summary'}
+    """
+    
     summary = f"""
     Website Analysis Summary:
     - URL: {analysis['url']}
@@ -336,6 +375,7 @@ Based on the technical analysis, here are general recommendations:
     Data Organization:
     - Tables: {analysis['tables']}
     - Forms: {analysis['forms']}
+    {content_summary}
     """
     
     try:
@@ -344,7 +384,7 @@ Based on the technical analysis, here are general recommendations:
             max_tokens=1500,
             messages=[{
                 "role": "user",
-                "content": f"""Based on this website analysis, provide specific recommendations to improve the page's discoverability and crawlability for AI/LLM systems. 
+                "content": f"""Based on this comprehensive website and content analysis, provide specific recommendations to improve the page's discoverability and crawlability for AI/LLM systems. 
 
 IMPORTANT CONTEXT: 
 - 80% of consumers now rely on AI-generated summaries (zero-click searches)
@@ -355,21 +395,49 @@ IMPORTANT CONTEXT:
 
 {summary}
 
-Please structure your response with:
-1. Top 3 Priority Improvements (most impactful for AI visibility)
-2. Zero-Click Optimization (how to appear in AI summaries)
-3. Content Structure for AI Agents (answer-focused content)
-4. Third-Party Authority Building (external validation)
-5. Quick Wins (easy changes with good AI impact)
+Please structure your response with these sections:
 
-Focus on:
-- Creating FAQ/Q&A content with direct answers
-- Implementing structured data for machine parsing
-- Building external authority through PR and citations
-- Using lists, definitions, and factual content
-- Adding llms.txt file for AI crawler guidance
+## 1. CONTENT QUALITY IMPROVEMENTS
+Based on the content analysis, provide specific recommendations for:
+- Reducing promotional language and increasing factual content
+- Improving readability and brevity
+- Adding credibility signals and citations
+- Structuring content for direct answer extraction
 
-Keep recommendations specific and actionable for improving AI agent comprehension and zero-click visibility."""
+## 2. ZERO-CLICK OPTIMIZATION
+How to ensure content appears in AI-generated summaries:
+- FAQ/Q&A content structure
+- Definition and glossary sections
+- Key facts and statistics placement
+- Summary boxes and key takeaways
+
+## 3. THIRD-PARTY AUTHORITY BUILDING
+Strategies for external validation:
+- PR and media mention strategies
+- Expert contribution opportunities
+- Wikipedia and directory presence
+- Review and testimonial optimization
+
+## 4. TECHNICAL QUICK WINS
+Immediate technical improvements:
+- Schema markup implementation
+- llms.txt file creation
+- Meta data optimization
+- Content structure improvements
+
+## 5. CONSULTING OPPORTUNITIES
+Identify specific areas where professional content creation and optimization services would have the highest impact, focusing on:
+- Content rewrites for AI optimization
+- Authority-building content campaigns
+- Ongoing content strategy development
+
+For each recommendation, include:
+- The specific issue identified
+- The recommended action
+- The expected impact on AI visibility
+- Implementation priority (Immediate/Short-term/Long-term)
+
+Keep recommendations specific, actionable, and focused on improving AI agent comprehension and zero-click visibility."""
             }]
         )
         
@@ -473,13 +541,15 @@ def analyze():
 def calculate_ai_readiness_score(analysis):
     """Calculate an AI readiness score based on expanded, weighted factors with detailed breakdown."""
     score = 0
-    max_score = 100
+    max_score = 150  # Increased to accommodate content quality scores
     breakdown = {
         'categories': [],
         'penalties': [],
         'total_earned': 0,
-        'total_possible': 100,
-        'final_score': 0
+        'total_possible': 150,
+        'final_score': 0,
+        'content_score': 0,
+        'technical_score': 0
     }
 
     # Title and meta description (12 points)
@@ -616,6 +686,93 @@ def calculate_ai_readiness_score(analysis):
         'details': f"Lang: {analysis.get('html_lang', 'Missing')}, Charset: {analysis.get('meta_charset', 'Missing')}"
     })
 
+    # Content Quality Scoring (50 additional points)
+    if 'content_analysis' in analysis:
+        ca = analysis['content_analysis']
+        
+        # Readability (10 points)
+        readability_score = 0
+        if ca['readability'].get('ai_friendly'):
+            readability_score = 10
+        elif ca['readability'].get('flesch_reading_ease'):
+            if ca['readability']['flesch_reading_ease'] >= 50:
+                readability_score = 7
+            elif ca['readability']['flesch_reading_ease'] >= 30:
+                readability_score = 4
+        score += readability_score
+        breakdown['categories'].append({
+            'name': 'Content Readability',
+            'earned': readability_score,
+            'possible': 10,
+            'details': ca['readability'].get('interpretation', 'Not analyzed')
+        })
+        
+        # Promotional vs Factual Content (15 points)
+        content_tone_score = 0
+        if not ca['promotional_language'].get('is_promotional', True):
+            content_tone_score += 8
+        elif ca['promotional_language'].get('promotional_density', 100) < 2:
+            content_tone_score += 4
+        
+        if ca['factual_content'].get('is_fact_based', False):
+            content_tone_score += 7
+        elif ca['factual_content'].get('factual_score', 0) > 50:
+            content_tone_score += 4
+        
+        score += content_tone_score
+        breakdown['categories'].append({
+            'name': 'Content Tone & Factuality',
+            'earned': content_tone_score,
+            'possible': 15,
+            'details': f"Promotional: {ca['promotional_language'].get('recommendation', 'N/A')}, Factual Score: {ca['factual_content'].get('factual_score', 0)}"
+        })
+        
+        # Answer Optimization (10 points)
+        answer_score = 0
+        if ca['answer_optimization'].get('has_faq_section'):
+            answer_score += 5
+        if ca['answer_optimization'].get('qa_pairs_count', 0) > 3:
+            answer_score += 3
+        if sum(ca['answer_optimization']['list_usage'].values()) > 5:
+            answer_score += 2
+        score += answer_score
+        breakdown['categories'].append({
+            'name': 'Answer Optimization',
+            'earned': answer_score,
+            'possible': 10,
+            'details': f"FAQ: {'✓' if ca['answer_optimization'].get('has_faq_section') else '✗'}, Q&A Pairs: {ca['answer_optimization'].get('qa_pairs_count', 0)}"
+        })
+        
+        # Credibility & Authority (10 points)
+        cred_score = 0
+        if ca['credibility_signals'].get('credibility_score', 0) >= 70:
+            cred_score = 10
+        elif ca['credibility_signals'].get('credibility_score', 0) >= 50:
+            cred_score = 7
+        elif ca['credibility_signals'].get('credibility_score', 0) >= 30:
+            cred_score = 4
+        score += cred_score
+        breakdown['categories'].append({
+            'name': 'Credibility & Authority',
+            'earned': cred_score,
+            'possible': 10,
+            'details': f"Score: {ca['credibility_signals'].get('credibility_score', 0)}, Quality Links: {ca['credibility_signals'].get('quality_links', 0)}"
+        })
+        
+        # Content Brevity (5 points)
+        brevity_score = 0
+        if ca['brevity_score'].get('is_concise', False):
+            brevity_score = 5
+        elif ca['brevity_score'].get('brevity_score', 0) > 50:
+            brevity_score = 3
+        score += brevity_score
+        breakdown['categories'].append({
+            'name': 'Content Brevity',
+            'earned': brevity_score,
+            'possible': 5,
+            'details': ca['brevity_score'].get('recommendation', 'Not analyzed')
+        })
+
     # Apply penalties for missing critical elements
     penalties = 0
     if not analysis.get('robots_txt'):
@@ -630,13 +787,39 @@ def calculate_ai_readiness_score(analysis):
     if not analysis.get('html_lang'):
         penalties += 2
         breakdown['penalties'].append({'name': 'Missing HTML lang attribute', 'points': -2})
+    
+    # Content-specific penalties
+    if 'content_analysis' in analysis:
+        ca = analysis['content_analysis']
+        if ca['promotional_language'].get('is_promotional', False):
+            penalties += 5
+            breakdown['penalties'].append({'name': 'Excessive promotional language', 'points': -5})
+        if not ca['answer_optimization'].get('has_faq_section', False):
+            penalties += 3
+            breakdown['penalties'].append({'name': 'No FAQ/Q&A section', 'points': -3})
 
     score -= penalties
 
     # Calculate totals
     breakdown['total_earned'] = sum(cat['earned'] for cat in breakdown['categories'])
     breakdown['total_penalties'] = -penalties
-    breakdown['final_score'] = max(0, min(score, max_score))
+    
+    # Normalize to 100-point scale
+    normalized_score = int((score / max_score) * 100)
+    breakdown['final_score'] = max(0, min(normalized_score, 100))
+    
+    # Calculate sub-scores
+    technical_categories = ['Title & Meta Description', 'Heading Structure', 'Image Alt Text', 
+                          'Structured Data', 'Semantic HTML', 'Data Organization', 
+                          'Crawlability Files', 'Social Media Tags', 'Canonical Tag', 
+                          'Language & Charset']
+    content_categories = ['Content Readability', 'Content Tone & Factuality', 
+                         'Answer Optimization', 'Credibility & Authority', 'Content Brevity']
+    
+    breakdown['technical_score'] = sum(cat['earned'] for cat in breakdown['categories'] 
+                                     if cat['name'] in technical_categories)
+    breakdown['content_score'] = sum(cat['earned'] for cat in breakdown['categories'] 
+                                   if cat['name'] in content_categories)
 
     return breakdown['final_score'], breakdown
 

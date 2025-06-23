@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pricing - AI Discoverability Analyzer</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #005e30;
+            --secondary-color: #f5f2e9;
+            --accent-color: #00a651;
+            --text-color: #333333;
+        }
+        body {
+            font-family: 'IBM Plex Sans', sans-serif;
+            background-color: var(--secondary-color);
+            color: var(--text-color);
+        }
+        .divider {
+            height: 2px;
+            background-color: var(--primary-color);
+            margin: 2rem 0;
+        }
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: white;
+            transition: all 0.3s ease;
+        }
+        .btn-primary:hover {
+            background-color: #004020;
+        }
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
+        .card {
+            background-color: white;
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.15);
+        }
+        .popular-badge {
+            background-color: var(--accent-color);
+            color: white;
+            padding: 0.25rem 1rem;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            position: absolute;
+            top: -12px;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .feature-check {
+            color: var(--accent-color);
+            width: 20px;
+            height: 20px;
+            margin-right: 0.5rem;
+        }
+        .feature-x {
+            color: #ccc;
+            width: 20px;
+            height: 20px;
+            margin-right: 0.5rem;
+        }
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 60px;
+            height: 28px;
+        }
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 34px;
+        }
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        input:checked + .slider {
+            background-color: var(--primary-color);
+        }
+        input:checked + .slider:before {
+            transform: translateX(32px);
+        }
+    </style>
+</head>
+<body class="min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-white shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16">
+                <div class="flex items-center">
+                    <a href="{{ url_for('index') }}" class="text-xl font-bold" style="color: var(--primary-color);">
+                        AI Discoverability Analyzer
+                    </a>
+                </div>
+                <div class="flex items-center space-x-4">
+                    {% if user.is_authenticated %}
+                        <a href="{{ url_for('dashboard') }}" class="text-gray-700 hover:text-gray-900">Dashboard</a>
+                        <a href="{{ url_for('auth.logout') }}" class="text-gray-700 hover:text-gray-900">Logout</a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="text-gray-700 hover:text-gray-900">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="btn-primary px-4 py-2 rounded">Sign Up</a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <!-- Header -->
+        <div class="text-center mb-12">
+            <h1 class="text-4xl font-bold mb-4" style="color: var(--primary-color);">
+                Choose Your Plan
+            </h1>
+            <p class="text-xl text-gray-600 mb-8">
+                Optimize your brand for AI discovery with the right plan for your needs
+            </p>
+            
+            <!-- Billing Toggle -->
+            <div class="flex items-center justify-center space-x-4">
+                <span class="text-gray-700">Monthly</span>
+                <label class="toggle-switch">
+                    <input type="checkbox" id="billingToggle" onchange="toggleBilling()">
+                    <span class="slider"></span>
+                </label>
+                <span class="text-gray-700">Yearly <span class="text-green-600 font-semibold">(Save 2 months!)</span></span>
+            </div>
+        </div>
+
+        <!-- Pricing Cards -->
+        <div class="grid md:grid-cols-3 gap-8 mb-12">
+            <!-- Free Plan -->
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold mb-2">Free</h2>
+                <p class="text-gray-600 mb-6">Perfect for getting started</p>
+                <div class="mb-6">
+                    <span class="text-4xl font-bold">$0</span>
+                    <span class="text-gray-600">/month</span>
+                </div>
+                
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>5 analyses per month</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Basic AI recommendations</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Analysis history</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-x" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        <span class="text-gray-400">API access</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-x" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                        </svg>
+                        <span class="text-gray-400">Export reports</span>
+                    </li>
+                </ul>
+                
+                {% if user.is_authenticated and user.tier == 'free' %}
+                    <button class="btn-secondary w-full py-3 rounded font-semibold" disabled>
+                        Current Plan
+                    </button>
+                {% else %}
+                    <a href="{{ url_for('auth.register') }}" class="btn-secondary w-full py-3 rounded font-semibold block text-center">
+                        Get Started
+                    </a>
+                {% endif %}
+            </div>
+
+            <!-- Professional Plan -->
+            <div class="card p-8 relative">
+                <span class="popular-badge">Most Popular</span>
+                <h2 class="text-2xl font-bold mb-2">Professional</h2>
+                <p class="text-gray-600 mb-6">For serious marketers</p>
+                <div class="mb-6">
+                    <span class="text-4xl font-bold monthly-price">$49</span>
+                    <span class="text-4xl font-bold yearly-price hidden">$490</span>
+                    <span class="text-gray-600">/<span class="billing-period">month</span></span>
+                </div>
+                
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span><strong>Unlimited</strong> analyses</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Advanced AI recommendations</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>API access (100 calls/month)</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>PDF & CSV exports</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>White-label reports</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Email support</span>
+                    </li>
+                </ul>
+                
+                <button onclick="subscribeToPlan('professional')" class="btn-primary w-full py-3 rounded font-semibold">
+                    Upgrade to Professional
+                </button>
+            </div>
+
+            <!-- Agency Plan -->
+            <div class="card p-8">
+                <h2 class="text-2xl font-bold mb-2">Agency</h2>
+                <p class="text-gray-600 mb-6">For teams and agencies</p>
+                <div class="mb-6">
+                    <span class="text-4xl font-bold monthly-price">$199</span>
+                    <span class="text-4xl font-bold yearly-price hidden">$1990</span>
+                    <span class="text-gray-600">/<span class="billing-period">month</span></span>
+                </div>
+                
+                <ul class="space-y-3 mb-8">
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Everything in Professional</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Up to 5 team members</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>API access (1000 calls/month)</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Bulk URL analysis</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Custom branding</span>
+                    </li>
+                    <li class="flex items-center">
+                        <svg class="feature-check" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path>
+                        </svg>
+                        <span>Priority support</span>
+                    </li>
+                </ul>
+                
+                <button onclick="subscribeToPlan('agency')" class="btn-primary w-full py-3 rounded font-semibold">
+                    Upgrade to Agency
+                </button>
+            </div>
+        </div>
+
+        <!-- Enterprise CTA -->
+        <div class="card p-8 text-center">
+            <h2 class="text-2xl font-bold mb-4">Need a Custom Solution?</h2>
+            <p class="text-gray-600 mb-6">
+                Get unlimited everything, custom integrations, dedicated support, and more with our Enterprise plan.
+            </p>
+            <a href="mailto:enterprise@ai-analyzer.com" class="btn-primary px-8 py-3 rounded font-semibold inline-block">
+                Contact Sales
+            </a>
+        </div>
+
+        <!-- FAQ Section -->
+        <div class="mt-16">
+            <h2 class="text-3xl font-bold text-center mb-8" style="color: var(--primary-color);">
+                Frequently Asked Questions
+            </h2>
+            
+            <div class="max-w-3xl mx-auto space-y-6">
+                <div class="card p-6">
+                    <h3 class="font-semibold mb-2">Can I change plans anytime?</h3>
+                    <p class="text-gray-600">
+                        Yes! You can upgrade or downgrade your plan at any time. Changes take effect immediately, 
+                        and we'll prorate any payments.
+                    </p>
+                </div>
+                
+                <div class="card p-6">
+                    <h3 class="font-semibold mb-2">What payment methods do you accept?</h3>
+                    <p class="text-gray-600">
+                        We accept all major credit cards (Visa, Mastercard, American Express) through our secure 
+                        payment processor, Stripe.
+                    </p>
+                </div>
+                
+                <div class="card p-6">
+                    <h3 class="font-semibold mb-2">Is there a free trial for paid plans?</h3>
+                    <p class="text-gray-600">
+                        While we don't offer free trials, you can start with our Free plan to test the service. 
+                        You can upgrade anytime, and we offer a 30-day money-back guarantee.
+                    </p>
+                </div>
+                
+                <div class="card p-6">
+                    <h3 class="font-semibold mb-2">What happens if I exceed my limits?</h3>
+                    <p class="text-gray-600">
+                        For Free plans, you'll need to wait until the next month or upgrade. For API limits on 
+                        paid plans, we'll notify you and can discuss increasing your limits.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://js.stripe.com/v3/"></script>
+    <script>
+        const stripe = Stripe('{{ stripe_key }}');
+        
+        function toggleBilling() {
+            const isYearly = document.getElementById('billingToggle').checked;
+            
+            // Toggle price displays
+            document.querySelectorAll('.monthly-price').forEach(el => {
+                el.classList.toggle('hidden', isYearly);
+            });
+            document.querySelectorAll('.yearly-price').forEach(el => {
+                el.classList.toggle('hidden', !isYearly);
+            });
+            
+            // Update billing period text
+            document.querySelectorAll('.billing-period').forEach(el => {
+                el.textContent = isYearly ? 'year' : 'month';
+            });
+        }
+        
+        async function subscribeToPlan(plan) {
+            const isYearly = document.getElementById('billingToggle').checked;
+            const priceId = isYearly ? `${plan}_yearly` : `${plan}_monthly`;
+            
+            // In production, you'd make an API call to create a checkout session
+            alert(`Stripe checkout would be initiated for ${plan} plan (${isYearly ? 'yearly' : 'monthly'})`);
+            
+            // Example checkout flow:
+            /*
+            const response = await fetch('/create-checkout-session', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    priceId: priceId
+                })
+            });
+            
+            const session = await response.json();
+            
+            const result = await stripe.redirectToCheckout({
+                sessionId: session.id
+            });
+            
+            if (result.error) {
+                alert(result.error.message);
+            }
+            */
+        }
+    </script>
+</body>
+</html>
