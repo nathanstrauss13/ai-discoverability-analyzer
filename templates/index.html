@@ -690,6 +690,36 @@
                 `;
                 contentMetrics.appendChild(brevityDiv);
             }
+            
+            // Wikipedia Presence
+            if (contentAnalysis.wikipedia_presence) {
+                const wikiDiv = document.createElement('div');
+                wikiDiv.className = 'content-metric';
+                const wikiClass = contentAnalysis.wikipedia_presence.wikipedia_ready ? 'good' : 'warning';
+                wikiDiv.innerHTML = `
+                    <h4 class="font-semibold mb-2">Wikipedia Presence</h4>
+                    <p class="${wikiClass}"><strong>Wikipedia Ready:</strong> ${contentAnalysis.wikipedia_presence.wikipedia_ready ? '✓ Yes' : '✗ No'}</p>
+                    <p><strong>Wikipedia Links:</strong> ${contentAnalysis.wikipedia_presence.wikipedia_links}</p>
+                    <p><strong>Neutral POV Score:</strong> ${contentAnalysis.wikipedia_presence.neutral_pov_score}/100</p>
+                    <p><strong>Verifiability Score:</strong> ${contentAnalysis.wikipedia_presence.verifiability_score}/100</p>
+                    <p><strong>Notability Indicators:</strong> ${contentAnalysis.wikipedia_presence.notability_indicators}</p>
+                    ${contentAnalysis.wikipedia_presence.has_wikipedia_style ? 
+                        '<p class="good"><strong>Style:</strong> ✓ Follows Wikipedia style</p>' : 
+                        '<p class="bad"><strong>Style:</strong> ✗ Does not follow Wikipedia style</p>'}
+                `;
+                
+                // Add Wikipedia citations if any
+                if (contentAnalysis.wikipedia_presence.wikipedia_citations.length > 0) {
+                    let citationsHtml = '<p class="mt-2"><strong>Wikipedia Citations:</strong></p><ul class="text-sm ml-4">';
+                    contentAnalysis.wikipedia_presence.wikipedia_citations.forEach(citation => {
+                        citationsHtml += `<li>• <a href="${citation.url}" target="_blank" class="text-blue-600 hover:underline">${citation.title}</a></li>`;
+                    });
+                    citationsHtml += '</ul>';
+                    wikiDiv.innerHTML += citationsHtml;
+                }
+                
+                contentMetrics.appendChild(wikiDiv);
+            }
         }
 
         function showError(message) {

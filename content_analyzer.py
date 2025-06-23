@@ -80,7 +80,8 @@ class ContentAnalyzer:
             'answer_optimization': self._analyze_answer_optimization(soup),
             'credibility_signals': self._analyze_credibility(text, soup),
             'content_structure': self._analyze_content_structure(soup),
-            'brevity_score': self._calculate_brevity_score(text, soup)
+            'brevity_score': self._calculate_brevity_score(text, soup),
+            'wikipedia_presence': self._analyze_wikipedia_presence(text, soup)
         }
         
         return analysis
@@ -503,6 +504,137 @@ class ContentAnalyzer:
         else:
             return "Poor - Significant editing needed for clarity"
 
+    def _analyze_wikipedia_presence(self, text, soup):
+        """Analyze Wikipedia presence and Wikipedia-readiness of content"""
+        analysis = {
+            'wikipedia_links': 0,
+            'wikipedia_citations': [],
+            'has_wikipedia_style': False,
+            'neutral_pov_score': 0,
+            'notability_indicators': 0,
+            'verifiability_score': 0,
+            'wikipedia_ready': False,
+            'recommendations': []
+        }
+        
+        # Count Wikipedia links
+        wikipedia_links = soup.find_all('a', href=re.compile(r'wikipedia\.org'))
+        analysis['wikipedia_links'] = len(wikipedia_links)
+        
+        # Extract Wikipedia citations (first 5)
+        for link in wikipedia_links[:5]:
+            href = link.get('href', '')
+            # Extract article title from URL
+            match = re.search(r'wikipedia\.org/wiki/([^#?]+)', href)
+            if match:
+                article_title = match.group(1).replace('_', ' ')
+                analysis['wikipedia_citations'].append({
+                    'title': article_title,
+                    'url': href
+                })
+        
+        # Analyze neutral point of view (NPOV)
+        text_lower = text.lower()
+        
+        # Neutral language indicators
+        neutral_indicators = [
+            'according to', 'states that', 'reports that', 'indicates that',
+            'suggests that', 'shows that', 'demonstrates that', 'reveals that'
+        ]
+        neutral_count = sum(1 for indicator in neutral_indicators if indicator in text_lower)
+        
+        # Opinion/bias indicators (negative for NPOV)
+        opinion_indicators = [
+            'i think', 'i believe', 'in my opinion', 'obviously', 'clearly',
+            'everyone knows', 'it is obvious', 'undoubtedly', 'definitely'
+        ]
+        opinion_count = sum(1 for indicator in opinion_indicators if indicator in text_lower)
+        
+        # Calculate NPOV score
+        words = text.split()
+        if words:
+            neutral_density = (neutral_count / len(words)) * 1000
+            opinion_density = (opinion_count / len(words)) * 1000
+            analysis['neutral_pov_score'] = max(0, min(100, 50 + neutral_density * 10 - opinion_density * 20))
+        
+        # Check for notability indicators
+        notability_patterns = [
+            r'award', r'recognition', r'featured in', r'published in',
+            r'cited by', r'referenced in', r'appeared in', r'mentioned in',
+            r'coverage', r'press', r'media', r'news', r'article'
+        ]
+        for pattern in notability_patterns:
+            analysis['notability_indicators'] += len(re.findall(pattern, text_lower))
+        
+        # Analyze verifiability (citations, references, sources)
+        verifiable_elements = 0
+        
+        # Check for inline citations
+        inline_citations = len(re.findall(r'\[\d+\]|\(\d{4}\)|<ref>', text))
+        verifiable_elements += inline_citations
+        
+        # Check for external links as sources
+        external_links = soup.find_all('a', href=re.compile(r'^https?://'))
+        reliable_sources = ['edu', 'gov', 'org', 'ac.uk', 'journal', 'research', 'study']
+        quality_sources = sum(1 for link in external_links 
+                            if any(source in link.get('href', '').lower() for source in reliable_sources))
+        verifiable_elements += quality_sources
+        
+        # Check for references section
+        references_section = bool(re.search(r'references|bibliography|sources|citations', text_lower))
+        if references_section:
+            verifiable_elements += 5
+        
+        analysis['verifiability_score'] = min(100, verifiable_elements * 10)
+        
+        # Determine if content follows Wikipedia style
+        has_sections = len(soup.find_all(['h2', 'h3'])) > 3
+        has_lead_paragraph = len(soup.find_all('p')) > 0 and len(soup.find('p').get_text().split()) > 50
+        has_citations = inline_citations > 0 or analysis['wikipedia_links'] > 0
+        
+        analysis['has_wikipedia_style'] = (
+            has_sections and 
+            has_lead_paragraph and 
+            has_citations and
+            analysis['neutral_pov_score'] > 60
+        )
+        
+        # Determine Wikipedia readiness
+        analysis['wikipedia_ready'] = (
+            analysis['neutral_pov_score'] > 70 and
+            analysis['verifiability_score'] > 50 and
+            analysis['notability_indicators'] > 3 and
+            not self._detect_promotional_language(text)['is_promotional']
+        )
+        
+        # Generate Wikipedia-specific recommendations
+        if analysis['wikipedia_links'] == 0:
+            analysis['recommendations'].append(
+                "Add Wikipedia citations to establish connection with Wikipedia's knowledge base"
+            )
+        
+        if analysis['neutral_pov_score'] < 70:
+            analysis['recommendations'].append(
+                "Adopt a more neutral tone by removing opinion-based language and promotional content"
+            )
+        
+        if analysis['verifiability_score'] < 50:
+            analysis['recommendations'].append(
+                "Add more verifiable sources, citations, and references to support claims"
+            )
+        
+        if analysis['notability_indicators'] < 3:
+            analysis['recommendations'].append(
+                "Include more third-party coverage, awards, or recognition to establish notability"
+            )
+        
+        if not has_sections:
+            analysis['recommendations'].append(
+                "Organize content with clear sections and subsections like Wikipedia articles"
+            )
+        
+        return analysis
+
     def generate_content_recommendations(self, content_analysis, technical_analysis):
         """Generate specific content recommendations based on analysis"""
         recommendations = []
@@ -588,5 +720,36 @@ class ContentAnalyzer:
                 'action': 'Use bullet points, numbered lists, and definition lists to organize information clearly.',
                 'impact': 'Lists are easily parsed by AI and improve content extraction'
             })
+        
+        # Wikipedia presence recommendations
+        if 'wikipedia_presence' in content_analysis:
+            wiki = content_analysis['wikipedia_presence']
+            
+            if not wiki['wikipedia_ready']:
+                recommendations.append({
+                    'category': 'Wikipedia Optimization',
+                    'priority': 'High',
+                    'issue': 'Content is not Wikipedia-ready',
+                    'action': 'Follow Wikipedia content guidelines: neutral tone, verifiable sources, notable information, and proper citations.',
+                    'impact': 'Wikipedia-ready content significantly increases AI visibility as LLMs are heavily trained on Wikipedia'
+                })
+            
+            if wiki['wikipedia_links'] == 0:
+                recommendations.append({
+                    'category': 'Wikipedia Integration',
+                    'priority': 'Medium',
+                    'issue': 'No Wikipedia citations found',
+                    'action': 'Add relevant Wikipedia links to establish topical connections and demonstrate research depth.',
+                    'impact': 'Wikipedia citations signal content authority and improve AI trust scores'
+                })
+            
+            if wiki['neutral_pov_score'] < 70:
+                recommendations.append({
+                    'category': 'Content Neutrality',
+                    'priority': 'High',
+                    'issue': f"Low neutral point of view score ({wiki['neutral_pov_score']}/100)",
+                    'action': 'Adopt Wikipedia\'s neutral tone by removing subjective language and opinion-based statements.',
+                    'impact': 'Neutral content is more likely to be referenced by AI as a reliable source'
+                })
         
         return recommendations
