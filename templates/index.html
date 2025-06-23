@@ -209,15 +209,18 @@
         
         <!-- Results Section (Hidden by Default) -->
         <div id="results" class="hidden">
-            <!-- Share Button -->
-            <div class="text-right mb-4">
-                <button id="shareBtn" onclick="shareResults()" class="btn-primary font-bold py-2 px-4 rounded" style="display: none;">
+            <!-- Score Section -->
+            <div class="card px-8 pt-6 pb-8 mb-4 relative">
+                <!-- Share Button in upper right corner -->
+                <button id="shareBtn" onclick="shareResults()" class="btn-primary font-bold py-2 px-4 rounded absolute top-4 right-4" style="display: none;">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2">
+                        <path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path>
+                        <polyline points="16 6 12 2 8 6"></polyline>
+                        <line x1="12" y1="2" x2="12" y2="15"></line>
+                    </svg>
                     Share Results
                 </button>
-            </div>
-            
-            <!-- Score Section -->
-            <div class="card px-8 pt-6 pb-8 mb-4">
+                
                 <h2 class="text-2xl font-bold mb-6 text-center">AI Readiness Score</h2>
                 <div class="score-circle">
                     <svg width="150" height="150">
