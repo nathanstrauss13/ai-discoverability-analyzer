@@ -1,7 +1,7 @@
 import os
 import re
 import requests
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, redirect, url_for
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
 from datetime import datetime
@@ -9,6 +9,9 @@ from anthropic import Anthropic
 from dotenv import load_dotenv
 import sys
 from content_analyzer import ContentAnalyzer
+import uuid
+import json
+from datetime import timedelta
 
 # Load .env file if it exists (for local development)
 load_dotenv()
@@ -19,6 +22,9 @@ app.secret_key = os.environ.get("FLASK_SECRET_KEY", "your_secret_key_here")
 # Initialize Anthropic client
 ANTHROPIC_API_KEY = os.environ.get("ANTHROPIC_API_KEY")
 anthropic = None
+
+# In-memory storage for results (in production, use a database)
+stored_results = {}
 
 if ANTHROPIC_API_KEY and ANTHROPIC_API_KEY.strip():
     try:
@@ -529,14 +535,59 @@ def analyze():
     # Calculate overall score and get breakdown
     score, score_breakdown = calculate_ai_readiness_score(analysis)
     
-    return jsonify({
-        'success': True,
+    # Generate unique ID for this result
+    result_id = str(uuid.uuid4())
+    
+    # Store the result
+    result_data = {
+        'id': result_id,
         'analysis': analysis,
         'recommendations': ai_recommendations,
         'score': score,
         'score_breakdown': score_breakdown,
-        'timestamp': datetime.now().isoformat()
+        'timestamp': datetime.now().isoformat(),
+        'created_at': datetime.now()
+    }
+    
+    stored_results[result_id] = result_data
+    
+    # Clean up old results (keep only last 1000 or from last 24 hours)
+    cleanup_old_results()
+    
+    return jsonify({
+        'success': True,
+        'id': result_id,
+        'analysis': analysis,
+        'recommendations': ai_recommendations,
+        'score': score,
+        'score_breakdown': score_breakdown,
+        'timestamp': result_data['timestamp']
     })
+
+def cleanup_old_results():
+    """Remove results older than 24 hours or keep only the most recent 1000"""
+    if len(stored_results) > 1000:
+        # Sort by creation time and keep only the most recent 1000
+        sorted_results = sorted(stored_results.items(), key=lambda x: x[1]['created_at'], reverse=True)
+        stored_results.clear()
+        for result_id, data in sorted_results[:1000]:
+            stored_results[result_id] = data
+    
+    # Also remove results older than 24 hours
+    cutoff_time = datetime.now() - timedelta(hours=24)
+    to_remove = [rid for rid, data in stored_results.items() if data['created_at'] < cutoff_time]
+    for rid in to_remove:
+        del stored_results[rid]
+
+@app.route('/results/<result_id>')
+def view_result(result_id):
+    """View a shared result"""
+    result = stored_results.get(result_id)
+    if not result:
+        return render_template('index.html', error="Result not found or has expired")
+    
+    # Pass the result data to the template
+    return render_template('index.html', shared_result=result)
 
 def calculate_ai_readiness_score(analysis):
     """Calculate an AI readiness score based on expanded, weighted factors with detailed breakdown."""

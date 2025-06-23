@@ -209,6 +209,13 @@
         
         <!-- Results Section (Hidden by Default) -->
         <div id="results" class="hidden">
+            <!-- Share Button -->
+            <div class="text-right mb-4">
+                <button id="shareBtn" onclick="shareResults()" class="btn-primary font-bold py-2 px-4 rounded" style="display: none;">
+                    Share Results
+                </button>
+            </div>
+            
             <!-- Score Section -->
             <div class="card px-8 pt-6 pb-8 mb-4">
                 <h2 class="text-2xl font-bold mb-6 text-center">AI Readiness Score</h2>
@@ -281,6 +288,18 @@
     </div>
 
     <script>
+        // Check if we have a shared result to display
+        const sharedResult = {% if shared_result %}{{ shared_result | tojson | safe }}{% else %}null{% endif %};
+        
+        if (sharedResult) {
+            // Display the shared result
+            window.addEventListener('DOMContentLoaded', function() {
+                displayResults(sharedResult);
+                // Update the URL input with the analyzed URL
+                document.getElementById('urlInput').value = sharedResult.analysis.url;
+            });
+        }
+        
         function analyzeURL() {
             const urlInput = document.getElementById('urlInput');
             const url = urlInput.value.trim();
@@ -310,6 +329,11 @@
                     showError(data.error);
                 } else {
                     displayResults(data);
+                    // Update URL with shareable link if we have an ID
+                    if (data.id) {
+                        const shareableUrl = `${window.location.origin}/results/${data.id}`;
+                        window.history.pushState({}, '', shareableUrl);
+                    }
                 }
             })
             .catch(error => {
@@ -325,6 +349,9 @@
         function displayResults(data) {
             // Show results section
             document.getElementById('results').classList.remove('hidden');
+            
+            // Show share button
+            document.getElementById('shareBtn').style.display = 'inline-block';
 
             // Display score
             const score = data.score;
@@ -738,6 +765,46 @@
                 analyzeURL();
             }
         });
+        
+        function shareResults() {
+            const shareUrl = window.location.href;
+            
+            // Try to use the Web Share API if available
+            if (navigator.share) {
+                navigator.share({
+                    title: 'AI Discoverability Analysis Results',
+                    text: `Check out this AI readiness analysis score: ${document.getElementById('scoreValue').textContent}/100`,
+                    url: shareUrl
+                }).catch(err => {
+                    // Fallback to copying to clipboard
+                    copyToClipboard(shareUrl);
+                });
+            } else {
+                // Fallback to copying to clipboard
+                copyToClipboard(shareUrl);
+            }
+        }
+        
+        function copyToClipboard(text) {
+            // Create a temporary input element
+            const tempInput = document.createElement('input');
+            tempInput.value = text;
+            document.body.appendChild(tempInput);
+            tempInput.select();
+            document.execCommand('copy');
+            document.body.removeChild(tempInput);
+            
+            // Show feedback
+            const shareBtn = document.getElementById('shareBtn');
+            const originalText = shareBtn.textContent;
+            shareBtn.textContent = 'Link Copied!';
+            shareBtn.style.backgroundColor = '#00a651';
+            
+            setTimeout(() => {
+                shareBtn.textContent = originalText;
+                shareBtn.style.backgroundColor = '';
+            }, 2000);
+        }
     </script>
 </body>
 </html>
