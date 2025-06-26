@@ -12,6 +12,8 @@
             --secondary-color: #f5f2e9;
             --accent-color: #00a651;
             --text-color: #333333;
+            --warning-color: #ff9500;
+            --danger-color: #ff3b30;
         }
         body {
             font-family: 'IBM Plex Sans', sans-serif;
@@ -33,15 +35,31 @@
         }
         .btn-primary:hover {
             background-color: #004020;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 94, 48, 0.3);
         }
         .btn-primary:disabled {
             opacity: 0.6;
             cursor: not-allowed;
         }
+        .btn-secondary {
+            background-color: white;
+            color: var(--primary-color);
+            border: 2px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        .btn-secondary:hover {
+            background-color: var(--primary-color);
+            color: white;
+        }
         .card {
             background-color: white;
-            border-radius: 0.5rem;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.75rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.07);
+            transition: all 0.3s ease;
+        }
+        .card:hover {
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.1);
         }
         .loading-overlay {
             position: fixed;
@@ -74,8 +92,8 @@
             display: none !important;
         }
         .score-circle {
-            width: 150px;
-            height: 150px;
+            width: 180px;
+            height: 180px;
             margin: 0 auto 20px;
             position: relative;
         }
@@ -84,13 +102,18 @@
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            font-size: 48px;
+            font-size: 56px;
             font-weight: 700;
             color: var(--primary-color);
         }
         .metric-card {
             background-color: #f8f8f8;
             border-left: 4px solid var(--primary-color);
+            transition: all 0.3s ease;
+        }
+        .metric-card:hover {
+            transform: translateX(4px);
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
         .good { color: #00a651; }
         .warning { color: #ff9500; }
@@ -145,10 +168,12 @@
         .priority-badge {
             display: inline-block;
             padding: 0.25rem 0.75rem;
-            border-radius: 0.25rem;
-            font-size: 0.875rem;
-            font-weight: 500;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
             margin-left: 0.5rem;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         .priority-high {
             background-color: #fee2e2;
@@ -163,13 +188,214 @@
             color: #2563eb;
         }
         input[type="url"] {
-            border: 1px solid #d1d5db;
-            transition: border-color 0.3s ease;
+            border: 2px solid #e5e7eb;
+            transition: all 0.3s ease;
+            font-size: 16px;
         }
         input[type="url"]:focus {
             outline: none;
             border-color: var(--primary-color);
             box-shadow: 0 0 0 3px rgba(0, 94, 48, 0.1);
+        }
+        .workflow-phase {
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+            border: 1px solid #e5e7eb;
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            margin-bottom: 1rem;
+            transition: all 0.3s ease;
+        }
+        .workflow-phase:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.08);
+        }
+        .workflow-task {
+            display: flex;
+            align-items: start;
+            margin-bottom: 0.75rem;
+            padding: 0.5rem;
+            border-radius: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        .workflow-task:hover {
+            background-color: #f3f4f6;
+        }
+        .task-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #d1d5db;
+            border-radius: 4px;
+            margin-right: 12px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        .competitor-row {
+            display: flex;
+            align-items: center;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 0.5rem;
+            background-color: #f9fafb;
+            transition: all 0.3s ease;
+        }
+        .competitor-row:hover {
+            background-color: #f3f4f6;
+        }
+        .score-badge {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            font-weight: 700;
+            font-size: 1.25rem;
+            margin-right: 1rem;
+        }
+        .score-good {
+            background-color: #d1fae5;
+            color: #065f46;
+        }
+        .score-warning {
+            background-color: #fed7aa;
+            color: #92400e;
+        }
+        .score-bad {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+        .cta-banner {
+            background: linear-gradient(135deg, var(--primary-color) 0%, #004020 100%);
+            color: white;
+            padding: 2rem;
+            border-radius: 0.75rem;
+            text-align: center;
+            margin-top: 2rem;
+        }
+        .cta-banner h3 {
+            color: white;
+            font-size: 1.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .cta-banner p {
+            opacity: 0.9;
+            margin-bottom: 1.5rem;
+        }
+        .emoji-icon {
+            font-size: 2rem;
+            margin-bottom: 0.5rem;
+        }
+        .gap-indicator {
+            display: inline-flex;
+            align-items: center;
+            padding: 0.5rem 1rem;
+            background-color: #fef3c7;
+            color: #92400e;
+            border-radius: 9999px;
+            font-size: 0.875rem;
+            font-weight: 600;
+            margin: 0.25rem;
+        }
+        .opportunity-card {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #a7f3d0;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .fade-in {
+            animation: fadeIn 0.5s ease-out;
+        }
+        
+        /* Expandable sections */
+        .expand-toggle {
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            color: var(--primary-color);
+            font-size: 0.875rem;
+            margin-left: 0.5rem;
+            transition: all 0.2s ease;
+        }
+        .expand-toggle:hover {
+            color: var(--accent-color);
+        }
+        .expand-toggle svg {
+            width: 16px;
+            height: 16px;
+            margin-left: 4px;
+            transition: transform 0.2s ease;
+        }
+        .expand-toggle.expanded svg {
+            transform: rotate(180deg);
+        }
+        .expandable-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease-out;
+            margin-top: 0.5rem;
+        }
+        .expandable-content.expanded {
+            max-height: 500px;
+        }
+        .explainer-box {
+            background-color: #f3f4f6;
+            border-left: 3px solid var(--accent-color);
+            padding: 1rem;
+            border-radius: 0.375rem;
+            font-size: 0.875rem;
+            line-height: 1.5;
+        }
+        
+        /* Tooltips */
+        .tooltip-trigger {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 16px;
+            height: 16px;
+            background-color: #e5e7eb;
+            color: #6b7280;
+            border-radius: 50%;
+            font-size: 0.75rem;
+            font-weight: 600;
+            cursor: help;
+            margin-left: 0.25rem;
+            position: relative;
+        }
+        .tooltip-trigger:hover .tooltip-content {
+            display: block;
+        }
+        .tooltip-content {
+            display: none;
+            position: absolute;
+            bottom: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: #1f2937;
+            color: white;
+            padding: 0.5rem 0.75rem;
+            border-radius: 0.375rem;
+            font-size: 0.75rem;
+            font-weight: normal;
+            white-space: normal;
+            width: 250px;
+            z-index: 10;
+            margin-bottom: 0.25rem;
+            line-height: 1.4;
+        }
+        .tooltip-content::after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 50%;
+            transform: translateX(-50%);
+            border: 4px solid transparent;
+            border-top-color: #1f2937;
         }
     </style>
 </head>
@@ -185,23 +411,24 @@
         <div class="divider"></div>
         
         <div class="card px-8 pt-6 pb-8 mb-4">
-            <h2 class="text-2xl font-bold mb-6">Analyze Your Website</h2>
-            <p class="text-gray-600 mb-6">Enter a URL to analyze how well your content is optimized for AI crawling and processing.</p>
+            <h2 class="text-2xl font-bold mb-6">🔍 Analyze Your Website's AI Visibility</h2>
+            <p class="text-gray-600 mb-6">Discover how AI systems see your content and get actionable recommendations to improve your visibility in AI-powered search results.</p>
             
             <div class="space-y-4">
                 <div>
                     <label class="block text-gray-700 text-sm font-bold mb-2" for="urlInput">
-                        Website URL
+                        Your Website URL
                     </label>
                     <div class="flex gap-4">
                         <input type="url" id="urlInput" placeholder="https://example.com" 
-                               class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                               class="shadow appearance-none border rounded-lg w-full py-3 px-4 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                         <button id="analyzeBtn" onclick="analyzeURL()" 
-                                class="btn-primary font-bold py-2 px-6 rounded focus:outline-none focus:shadow-outline">
+                                class="btn-primary font-bold py-3 px-8 rounded-lg focus:outline-none focus:shadow-outline">
                             Analyze
                         </button>
                     </div>
                 </div>
+                
                 
                 <div id="errorMsg" class="error-message hidden"></div>
             </div>
@@ -210,7 +437,7 @@
         <!-- Results Section (Hidden by Default) -->
         <div id="results" class="hidden">
             <!-- Score Section -->
-            <div class="card px-8 pt-6 pb-8 mb-4 relative">
+            <div class="card px-8 pt-6 pb-8 mb-4 relative fade-in">
                 <!-- Share Button in upper right corner -->
                 <button id="shareBtn" onclick="shareResults()" class="btn-primary font-bold py-2 px-4 rounded absolute top-4 right-4" style="display: none;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="inline-block mr-2">
@@ -221,19 +448,19 @@
                     Share Results
                 </button>
                 
-                <h2 class="text-2xl font-bold mb-6 text-center">AI Readiness Score</h2>
+                <h2 class="text-2xl font-bold mb-6 text-center">🎯 AI Readiness Score</h2>
                 <div class="score-circle">
-                    <svg width="150" height="150">
-                        <circle cx="75" cy="75" r="70" fill="none" stroke="#e0e0e0" stroke-width="10"/>
-                        <circle id="scoreCircle" cx="75" cy="75" r="70" fill="none" stroke="#005e30" stroke-width="10"
-                                stroke-dasharray="440" stroke-dashoffset="440"
-                                transform="rotate(-90 75 75)"
+                    <svg width="180" height="180">
+                        <circle cx="90" cy="90" r="85" fill="none" stroke="#e0e0e0" stroke-width="10"/>
+                        <circle id="scoreCircle" cx="90" cy="90" r="85" fill="none" stroke="#005e30" stroke-width="10"
+                                stroke-dasharray="534" stroke-dashoffset="534"
+                                transform="rotate(-90 90 90)"
                                 style="transition: stroke-dashoffset 1s ease-in-out"/>
                     </svg>
                     <div class="score-value" id="scoreValue">0</div>
                 </div>
-                <p class="text-center text-lg font-semibold" id="scoreLabel">Loading...</p>
-                <p class="text-center text-gray-600" id="scoreDescription"></p>
+                <p class="text-center text-xl font-semibold" id="scoreLabel">Loading...</p>
+                <p class="text-center text-gray-600 text-lg" id="scoreDescription"></p>
                 
                 <!-- Sub-scores -->
                 <div class="text-center mt-6" id="subScores">
@@ -241,43 +468,79 @@
                 </div>
             </div>
             
-            <!-- Score Breakdown -->
-            <div class="card px-8 pt-6 pb-8 mb-4">
-                <h2 class="text-2xl font-bold mb-6">Score Breakdown</h2>
-                <div id="scoreBreakdown" class="space-y-3">
-                    <!-- Score breakdown will be inserted here -->
-                </div>
-            </div>
-
-            <!-- Technical Analysis -->
-            <div class="card px-8 pt-6 pb-8 mb-4">
-                <h2 class="text-2xl font-bold mb-6">Technical Analysis</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="analysisGrid">
-                    <!-- Metrics will be inserted here -->
+            
+            <!-- Content Optimization Workflow -->
+            <div id="workflowSection" class="card px-8 pt-6 pb-8 mb-4 fade-in">
+                <h2 class="text-2xl font-bold mb-6">🚀 Your Content Optimization Roadmap</h2>
+                <p class="text-gray-600 mb-6">Follow this step-by-step plan to improve your AI visibility:</p>
+                <div id="workflowContent">
+                    <!-- Workflow will be inserted here -->
                 </div>
             </div>
             
-            <!-- Content Quality Analysis -->
-            <div class="card px-8 pt-6 pb-8 mb-4" id="contentAnalysisSection" style="display: none;">
-                <h2 class="text-2xl font-bold mb-6">Content Quality Analysis</h2>
-                <div id="contentMetrics">
-                    <!-- Content metrics will be inserted here -->
+            <!-- Comprehensive Score Breakdown -->
+            <div class="card px-8 pt-6 pb-8 mb-4 fade-in">
+                <h2 class="text-2xl font-bold mb-6">📊 Comprehensive Score Breakdown</h2>
+                
+                <!-- Technical SEO Section -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        🔧 Technical SEO
+                        <span class="ml-2 text-sm font-normal text-gray-600" id="technicalTotal"></span>
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="technicalMetrics">
+                        <!-- Technical metrics will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Content Optimization Section -->
+                <div class="mb-8">
+                    <h3 class="text-xl font-semibold mb-4 flex items-center">
+                        ✍️ Content Optimization
+                        <span class="ml-2 text-sm font-normal text-gray-600" id="contentTotal"></span>
+                    </h3>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="contentMetrics">
+                        <!-- Content metrics will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Penalties Section -->
+                <div id="penaltiesSection" class="hidden">
+                    <h3 class="text-xl font-semibold mb-4 text-red-600 flex items-center">
+                        ⚠️ Penalties Applied
+                        <span class="tooltip-trigger">?
+                            <span class="tooltip-content">Penalties are deducted from your total score for missing critical elements that significantly impact AI discoverability. These are must-have features that AI systems expect to find.</span>
+                        </span>
+                    </h3>
+                    <div id="penaltiesList" class="space-y-2">
+                        <!-- Penalties will be inserted here -->
+                    </div>
+                </div>
+                
+                <!-- Total Score Summary -->
+                <div class="mt-6 pt-6 border-t-2 border-gray-200">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xl font-semibold">Total Score</span>
+                        <span class="text-2xl font-bold" id="totalScoreDisplay"></span>
+                    </div>
                 </div>
             </div>
             
-            <!-- Recommendations -->
-            <div class="card px-8 pt-6 pb-8 mb-4">
-                <h2 class="text-2xl font-bold mb-6">AI Optimization Recommendations</h2>
-                <div id="recommendations" class="max-w-none">
-                    <!-- Recommendations will be inserted here -->
-                </div>
+            
+            <!-- CTA Banner -->
+            <div class="cta-banner fade-in">
+                <h3>Ready to Accelerate Your AI Optimization?</h3>
+                <p>This roadmap would take your team 3-6 months to implement. Let's discuss how to achieve results in 6-8 weeks.</p>
+                <a href="https://innatec3.com/home#contact" class="btn-secondary font-bold py-3 px-8 rounded-lg inline-block">
+                    Schedule Strategy Session
+                </a>
             </div>
         </div>
         
         <!-- Loading Overlay (Hidden by Default) -->
         <div id="loading" class="loading-overlay hidden">
             <div class="spinner"></div>
-            <p class="text-xl">Analyzing your website...</p>
+            <p class="text-xl">🤖 Analyzing your website...</p>
             <p class="text-sm mt-2">This may take a moment.</p>
         </div>
     </div>
@@ -290,9 +553,21 @@
         </p>
     </div>
 
-    <script>
+    {% if shared_result %}
+    <script type="application/json" id="sharedResultData">{{ shared_result | tojson | safe }}</script>
+    {% endif %}
+    
+    <script type="text/javascript">
         // Check if we have a shared result to display
-        const sharedResult = {% if shared_result %}{{ shared_result | tojson | safe }}{% else %}null{% endif %};
+        let sharedResult = null;
+        const sharedResultElement = document.getElementById('sharedResultData');
+        if (sharedResultElement) {
+            try {
+                sharedResult = JSON.parse(sharedResultElement.textContent);
+            } catch (e) {
+                console.error('Error parsing shared result:', e);
+            }
+        }
         
         if (sharedResult) {
             // Display the shared result
@@ -366,391 +641,366 @@
             scoreValue.textContent = score;
             
             // Animate score circle
-            const circumference = 2 * Math.PI * 70;
+            const circumference = 2 * Math.PI * 85;
             const offset = circumference - (score / 100) * circumference;
             setTimeout(() => {
                 scoreCircle.style.strokeDashoffset = offset;
             }, 100);
 
-            // Set score color and label
+            // Set score color and label with emojis
             if (score >= 80) {
                 scoreCircle.style.stroke = '#00a651';
-                scoreLabel.textContent = 'Excellent';
+                scoreLabel.textContent = '🌟 Excellent';
                 scoreDescription.textContent = 'Your content is well-optimized for AI systems';
             } else if (score >= 60) {
                 scoreCircle.style.stroke = '#ff9500';
-                scoreLabel.textContent = 'Good';
+                scoreLabel.textContent = '👍 Good';
                 scoreDescription.textContent = 'Your content has room for improvement';
             } else {
                 scoreCircle.style.stroke = '#ff3b30';
-                scoreLabel.textContent = 'Needs Work';
+                scoreLabel.textContent = '⚠️ Needs Work';
                 scoreDescription.textContent = 'Significant improvements recommended';
             }
 
+            // Display workflow if available
+            if (data.workflow) {
+                displayWorkflow(data.workflow);
+            }
+
+            // Competitive analysis removed
+
             // Display score breakdown if available
             if (data.score_breakdown) {
-                const breakdownDiv = document.getElementById('scoreBreakdown');
-                breakdownDiv.innerHTML = '';
-
-                // Display categories
-                data.score_breakdown.categories.forEach(category => {
-                    const percentage = category.possible > 0 ? Math.round((category.earned / category.possible) * 100) : 0;
-                    const barColor = percentage >= 80 ? '#00a651' : percentage >= 50 ? '#ff9500' : '#ff3b30';
-                    
-                    const categoryDiv = document.createElement('div');
-                    categoryDiv.className = 'mb-4';
-                    categoryDiv.innerHTML = `
-                        <div class="flex justify-between mb-1">
-                            <span class="text-sm font-medium">${category.name}</span>
-                            <span class="text-sm">${category.earned}/${category.possible} points</span>
-                        </div>
-                        <div class="w-full bg-gray-200 rounded-full h-2.5">
-                            <div class="h-2.5 rounded-full" style="width: ${percentage}%; background-color: ${barColor}; transition: width 1s ease-in-out;"></div>
-                        </div>
-                        <p class="text-xs text-gray-600 mt-1">${category.details}</p>
-                    `;
-                    breakdownDiv.appendChild(categoryDiv);
-                });
-
-                // Display penalties if any
-                if (data.score_breakdown.penalties && data.score_breakdown.penalties.length > 0) {
-                    const penaltyHeader = document.createElement('h3');
-                    penaltyHeader.className = 'text-lg font-semibold mt-6 mb-3 text-red-600';
-                    penaltyHeader.textContent = 'Penalties Applied';
-                    breakdownDiv.appendChild(penaltyHeader);
-
-                    data.score_breakdown.penalties.forEach(penalty => {
-                        const penaltyDiv = document.createElement('div');
-                        penaltyDiv.className = 'text-sm text-red-600 mb-1';
-                        penaltyDiv.innerHTML = `• ${penalty.name}: <strong>${penalty.points} points</strong>`;
-                        breakdownDiv.appendChild(penaltyDiv);
-                    });
-                }
-
-                // Display total
-                const totalDiv = document.createElement('div');
-                totalDiv.className = 'mt-6 pt-4 border-t-2 border-gray-200';
-                totalDiv.innerHTML = `
-                    <div class="flex justify-between font-semibold">
-                        <span>Total Score</span>
-                        <span>${data.score_breakdown.final_score}/100</span>
-                    </div>
-                `;
-                breakdownDiv.appendChild(totalDiv);
+                displayScoreBreakdown(data.score_breakdown);
             }
             
             // Display sub-scores
-            if (data.score_breakdown.technical_score !== undefined && data.score_breakdown.content_score !== undefined) {
+            if (data.score_breakdown && data.score_breakdown.technical_score !== undefined && data.score_breakdown.content_score !== undefined) {
                 const subScoresDiv = document.getElementById('subScores');
                 subScoresDiv.innerHTML = `
                     <div class="sub-score" style="background-color: #e0f2fe; color: #0369a1;">
-                        Technical Score: ${data.score_breakdown.technical_score}/100
+                        🔧 Technical Score: ${data.score_breakdown.technical_score}/100
                     </div>
                     <div class="sub-score" style="background-color: #f0fdf4; color: #15803d;">
-                        Content Score: ${data.score_breakdown.content_score}/50
+                        ✍️ Content Score: ${data.score_breakdown.content_score}/50
                     </div>
                 `;
             }
 
-            // Display analysis metrics
-            const analysisGrid = document.getElementById('analysisGrid');
-            analysisGrid.innerHTML = '';
-
-            const metrics = [
-                {
-                    title: 'Page Title',
-                    value: data.analysis.title !== 'No title found' ? '✓' : '✗',
-                    color: data.analysis.title !== 'No title found' ? 'good' : 'bad'
-                },
-                {
-                    title: 'Meta Description',
-                    value: data.analysis.meta_description ? '✓' : '✗',
-                    color: data.analysis.meta_description ? 'good' : 'bad'
-                },
-                {
-                    title: 'H1 Tags',
-                    value: data.analysis.headings.h1.length,
-                    color: data.analysis.headings.h1.length === 1 ? 'good' : 'warning'
-                },
-                {
-                    title: 'Images with Alt Text',
-                    value: `${data.analysis.images.with_alt}/${data.analysis.images.total}`,
-                    color: data.analysis.images.without_alt === 0 ? 'good' : 'warning'
-                },
-                {
-                    title: 'Structured Data',
-                    value: data.analysis.structured_data ? '✓' : '✗',
-                    color: data.analysis.structured_data ? 'good' : 'bad'
-                },
-                {
-                    title: 'Semantic HTML',
-                    value: Object.values(data.analysis.semantic_elements).reduce((a, b) => a + b, 0),
-                    color: Object.values(data.analysis.semantic_elements).reduce((a, b) => a + b, 0) > 0 ? 'good' : 'bad'
-                },
-                {
-                    title: 'Robots.txt',
-                    value: data.analysis.robots_txt ? '✓' : '✗',
-                    color: data.analysis.robots_txt ? 'good' : 'bad'
-                },
-                {
-                    title: 'Sitemap.xml',
-                    value: data.analysis.sitemap_xml ? '✓' : '✗',
-                    color: data.analysis.sitemap_xml ? 'good' : 'bad'
-                },
-                {
-                    title: 'Open Graph Tags',
-                    value: data.analysis.open_graph_tags ? data.analysis.open_graph_tags.length : 0,
-                    color: data.analysis.open_graph_tags && data.analysis.open_graph_tags.length > 0 ? 'good' : 'warning'
-                },
-                {
-                    title: 'Twitter Card Tags',
-                    value: data.analysis.twitter_card_tags ? data.analysis.twitter_card_tags.length : 0,
-                    color: data.analysis.twitter_card_tags && data.analysis.twitter_card_tags.length > 0 ? 'good' : 'warning'
-                },
-                {
-                    title: 'Canonical Tag',
-                    value: data.analysis.canonical_tag ? '✓' : '✗',
-                    color: data.analysis.canonical_tag ? 'good' : 'bad'
-                },
-                {
-                    title: 'HTML Language',
-                    value: data.analysis.html_lang || 'Missing',
-                    color: data.analysis.html_lang ? 'good' : 'bad'
-                },
-                {
-                    title: 'FAQ Content',
-                    value: data.analysis.faq_detected ? '✓' : '✗',
-                    color: data.analysis.faq_detected ? 'good' : 'warning'
-                },
-                {
-                    title: 'Q&A Schema',
-                    value: data.analysis.qa_schema ? '✓' : '✗',
-                    color: data.analysis.qa_schema ? 'good' : 'warning'
-                },
-                {
-                    title: 'llms.txt File',
-                    value: data.analysis.llms_txt ? '✓' : '✗',
-                    color: data.analysis.llms_txt ? 'good' : 'warning'
-                },
-                {
-                    title: 'List Elements',
-                    value: (data.analysis.ordered_lists || 0) + (data.analysis.unordered_lists || 0) + (data.analysis.definition_lists || 0),
-                    color: ((data.analysis.ordered_lists || 0) + (data.analysis.unordered_lists || 0) + (data.analysis.definition_lists || 0)) > 0 ? 'good' : 'warning'
-                },
-                {
-                    title: 'Organization Schema',
-                    value: data.analysis.organization_schema ? '✓' : '✗',
-                    color: data.analysis.organization_schema ? 'good' : 'warning'
-                }
-            ];
-
-            metrics.forEach(metric => {
-                const card = document.createElement('div');
-                card.className = 'metric-card p-4 rounded';
-                card.innerHTML = `
-                    <div class="font-semibold text-sm mb-1">${metric.title}</div>
-                    <div class="text-2xl font-bold ${metric.color}">${metric.value}</div>
-                `;
-                analysisGrid.appendChild(card);
-            });
-
-            // Display recommendations with enhanced formatting
-            const recommendationsDiv = document.getElementById('recommendations');
-            if (data.recommendations.includes('##')) {
-                // Format structured recommendations
-                let formattedContent = data.recommendations;
-                
-                // Replace ## headers with styled h3 tags
-                formattedContent = formattedContent.replace(/##\s+(\d+\.\s+[^\n]+)/g, '<h3 class="text-xl font-semibold mt-6 mb-3 text-green-800">$1</h3>');
-                formattedContent = formattedContent.replace(/##\s+([^\n]+)/g, '<h3 class="text-xl font-semibold mt-6 mb-3 text-green-800">$1</h3>');
-                
-                // Format bullet points
-                formattedContent = formattedContent.replace(/^-\s+(.+)$/gm, '<li class="ml-4 mb-2">$1</li>');
-                
-                // Wrap consecutive li elements in ul
-                formattedContent = formattedContent.replace(/(<li[^>]*>.*?<\/li>\s*)+/g, function(match) {
-                    return '<ul class="list-disc list-inside mb-4">' + match + '</ul>';
-                });
-                
-                // Format bold text
-                formattedContent = formattedContent.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-                
-                // Format paragraphs
-                formattedContent = formattedContent.split('\n\n').map(para => {
-                    para = para.trim();
-                    if (para && !para.startsWith('<h3') && !para.startsWith('<ul')) {
-                        return '<p class="mb-4">' + para + '</p>';
-                    }
-                    return para;
-                }).join('\n');
-                
-                // Clean up extra line breaks
-                formattedContent = formattedContent.replace(/\n{3,}/g, '\n\n');
-                formattedContent = formattedContent.replace(/<\/p>\s*<p/g, '</p><p');
-                
-                recommendationsDiv.innerHTML = formattedContent;
-            } else {
-                // Fallback for non-structured recommendations
-                recommendationsDiv.innerHTML = '<p>' + data.recommendations.replace(/\n\n/g, '</p><p>').replace(/\n/g, '<br>') + '</p>';
-            }
-            
-            // Display content analysis if available
-            if (data.analysis.content_analysis) {
-                displayContentAnalysis(data.analysis.content_analysis);
-            }
+            // Recommendations removed
 
             // Scroll to results
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
         }
         
-        function displayContentAnalysis(contentAnalysis) {
-            const contentSection = document.getElementById('contentAnalysisSection');
-            const contentMetrics = document.getElementById('contentMetrics');
+        function displayWorkflow(workflow) {
+            const workflowContent = document.getElementById('workflowContent');
+            workflowContent.innerHTML = '';
             
-            contentSection.style.display = 'block';
-            contentMetrics.innerHTML = '';
+            // Task explainers
+            const taskExplainers = {
+                'Add meta descriptions to all pages': {
+                    title: 'What are meta descriptions?',
+                    content: 'Meta descriptions are short summaries (150-160 characters) that appear under your page title in search results. Think of them as your webpage\'s elevator pitch.',
+                    example: 'Example: "Learn how to bake perfect chocolate chip cookies with our step-by-step guide. Includes tips for chewy, crispy, or cake-like textures."'
+                },
+                'Add alt text to': {
+                    title: 'What is alt text?',
+                    content: 'Alt text (alternative text) describes images for screen readers and search engines. It\'s like a caption that explains what\'s in the picture when the image can\'t be seen.',
+                    example: 'Example: Instead of "IMG_1234.jpg", use "Woman kneading sourdough bread dough on marble countertop"'
+                },
+                'Create robots.txt file': {
+                    title: 'What is robots.txt?',
+                    content: 'A robots.txt file is like a "welcome mat" for search engines. It tells AI crawlers which parts of your site they can visit and which parts are off-limits.',
+                    example: 'Example: You might allow access to your blog but block access to your admin pages.'
+                },
+                'Generate and submit sitemap.xml': {
+                    title: 'What is a sitemap?',
+                    content: 'A sitemap is like a table of contents for your website. It lists all your pages in one place, making it easier for AI to discover and understand your content.',
+                    example: 'Example: It\'s a file that says "Here are all 50 pages on my site, when they were last updated, and how important each one is."'
+                },
+                'Add author bylines and credentials': {
+                    title: 'Why author information matters',
+                    content: 'AI systems trust content more when they know who wrote it. Author bylines with credentials show expertise and build credibility.',
+                    example: 'Example: "By Dr. Sarah Johnson, PhD in Nutrition, 15 years experience in dietary research"'
+                },
+                'Implement structured data markup': {
+                    title: 'What is structured data?',
+                    content: 'Structured data is like adding labels to your content that AI can easily read. It\'s special code that explicitly tells AI what type of content you have.',
+                    example: 'Example: Marking up a recipe with cooking time, ingredients, and ratings so AI knows it\'s a recipe, not just text about food.'
+                },
+                'Create comprehensive FAQ sections': {
+                    title: 'Why FAQ sections matter',
+                    content: 'AI loves Q&A format because it matches how people ask questions. FAQs provide direct answers that AI can easily extract and share.',
+                    example: 'Example: "Q: How long does shipping take? A: Standard shipping takes 3-5 business days within the US."'
+                },
+                'Rewrite promotional content with factual focus': {
+                    title: 'Factual vs. promotional content',
+                    content: 'AI prefers objective facts over marketing language. Replace superlatives with specific data and features.',
+                    example: 'Instead of: "The best software ever!" Use: "Software that processes 10,000 transactions per second with 99.9% uptime"'
+                },
+                'Add statistics, research citations, and data': {
+                    title: 'Why data matters to AI',
+                    content: 'AI systems prioritize content backed by evidence. Statistics, research citations, and concrete data make your content more authoritative.',
+                    example: 'Example: "According to a 2024 Stanford study, 73% of users prefer mobile-first designs (Smith et al., 2024)"'
+                },
+                'Develop topical authority content strategy': {
+                    title: 'What is topical authority?',
+                    content: 'Topical authority means becoming the go-to source on a specific subject by creating comprehensive, interconnected content that covers all aspects of a topic.',
+                    example: 'Example: If you sell running shoes, create content about training plans, injury prevention, nutrition for runners, race strategies, etc.'
+                },
+                'Build knowledge graph-aligned content': {
+                    title: 'What are knowledge graphs?',
+                    content: 'Knowledge graphs show how different concepts relate to each other. AI uses these connections to understand context and provide better answers.',
+                    example: 'Example: Connecting "chocolate chip cookies" to related concepts like "baking temperature," "cookie texture," "ingredient substitutions," etc.'
+                },
+                'Create Wikipedia-style neutral content': {
+                    title: 'Academic writing style',
+                    content: 'AI models are heavily trained on Wikipedia. Writing in a neutral, fact-based style similar to Wikipedia makes your content more AI-friendly.',
+                    example: 'Example: "The company was founded in 2010" instead of "Our amazing journey began in 2010"'
+                },
+                'Implement advanced schema strategies': {
+                    title: 'Advanced schema markup',
+                    content: 'Beyond basic structured data, advanced schemas help AI understand complex relationships, events, products, and services on your site.',
+                    example: 'Example: Using Event schema for webinars, Product schema for e-commerce items, or HowTo schema for tutorials.'
+                }
+            };
             
-            // Readability
-            if (contentAnalysis.readability) {
-                const readabilityDiv = document.createElement('div');
-                readabilityDiv.className = 'content-metric';
-                readabilityDiv.innerHTML = `
-                    <h4 class="font-semibold mb-2">Readability</h4>
-                    <p><strong>Score:</strong> ${contentAnalysis.readability.flesch_reading_ease || 'N/A'}</p>
-                    <p><strong>Grade Level:</strong> ${contentAnalysis.readability.flesch_kincaid_grade || 'N/A'}</p>
-                    <p><strong>Interpretation:</strong> ${contentAnalysis.readability.interpretation}</p>
-                    <p><strong>AI Friendly:</strong> ${contentAnalysis.readability.ai_friendly ? '✓ Yes' : '✗ No'}</p>
-                `;
-                contentMetrics.appendChild(readabilityDiv);
-            }
-            
-            // Content Quality
-            if (contentAnalysis.content_quality) {
-                const qualityDiv = document.createElement('div');
-                qualityDiv.className = 'content-metric';
-                qualityDiv.innerHTML = `
-                    <h4 class="font-semibold mb-2">Content Quality</h4>
-                    <p><strong>Word Count:</strong> ${contentAnalysis.content_quality.word_count}</p>
-                    <p><strong>Avg Sentence Length:</strong> ${contentAnalysis.content_quality.avg_sentence_length} words</p>
-                    <p><strong>Vocabulary Diversity:</strong> ${(contentAnalysis.content_quality.vocabulary_diversity * 100).toFixed(1)}%</p>
-                    <p><strong>Quality Score:</strong> ${contentAnalysis.content_quality.quality_score}/100</p>
-                `;
-                contentMetrics.appendChild(qualityDiv);
-            }
-            
-            // Promotional Language
-            if (contentAnalysis.promotional_language) {
-                const promoDiv = document.createElement('div');
-                promoDiv.className = 'content-metric';
-                const promoClass = contentAnalysis.promotional_language.is_promotional ? 'bad' : 'good';
-                promoDiv.innerHTML = `
-                    <h4 class="font-semibold mb-2">Promotional Language</h4>
-                    <p class="${promoClass}"><strong>Status:</strong> ${contentAnalysis.promotional_language.recommendation}</p>
-                    <p><strong>Promotional Density:</strong> ${contentAnalysis.promotional_language.promotional_density}%</p>
-                    <p><strong>Superlatives Found:</strong> ${contentAnalysis.promotional_language.superlative_count}</p>
-                    ${contentAnalysis.promotional_language.found_keywords.length > 0 ? 
-                        `<p><strong>Keywords:</strong> ${contentAnalysis.promotional_language.found_keywords.slice(0, 5).join(', ')}</p>` : ''}
-                `;
-                contentMetrics.appendChild(promoDiv);
-            }
-            
-            // Factual Content
-            if (contentAnalysis.factual_content) {
-                const factualDiv = document.createElement('div');
-                factualDiv.className = 'content-metric';
-                const factClass = contentAnalysis.factual_content.is_fact_based ? 'good' : 'warning';
-                factualDiv.innerHTML = `
-                    <h4 class="font-semibold mb-2">Factual Content</h4>
-                    <p class="${factClass}"><strong>Factual Score:</strong> ${contentAnalysis.factual_content.factual_score}/100</p>
-                    <p><strong>Statistics Count:</strong> ${contentAnalysis.factual_content.statistics_count}</p>
-                    <p><strong>Citations:</strong> ${contentAnalysis.factual_content.citation_count}</p>
-                    <p><strong>Factual Indicators:</strong> ${contentAnalysis.factual_content.factual_indicators}</p>
-                `;
-                contentMetrics.appendChild(factualDiv);
-            }
-            
-            // Answer Optimization
-            if (contentAnalysis.answer_optimization) {
-                const answerDiv = document.createElement('div');
-                answerDiv.className = 'content-metric';
-                answerDiv.innerHTML = `
-                    <h4 class="font-semibold mb-2">Answer Optimization</h4>
-                    <p class="${contentAnalysis.answer_optimization.has_faq_section ? 'good' : 'bad'}">
-                        <strong>FAQ Section:</strong> ${contentAnalysis.answer_optimization.has_faq_section ? '✓ Yes' : '✗ No'}
-                    </p>
-                    <p><strong>Q&A Pairs:</strong> ${contentAnalysis.answer_optimization.qa_pairs_count}</p>
-                    <p><strong>Definitions:</strong> ${contentAnalysis.answer_optimization.definition_count}</p>
-                    <p><strong>How-to Sections:</strong> ${contentAnalysis.answer_optimization.how_to_sections}</p>
-                    <p><strong>Lists:</strong> OL: ${contentAnalysis.answer_optimization.list_usage.ordered}, 
-                       UL: ${contentAnalysis.answer_optimization.list_usage.unordered}, 
-                       DL: ${contentAnalysis.answer_optimization.list_usage.definition}</p>
-                `;
-                contentMetrics.appendChild(answerDiv);
-            }
-            
-            // Credibility
-            if (contentAnalysis.credibility_signals) {
-                const credDiv = document.createElement('div');
-                credDiv.className = 'content-metric';
-                credDiv.innerHTML = `
-                    <h4 class="font-semibold mb-2">Credibility & Authority</h4>
-                    <p><strong>Credibility Score:</strong> ${contentAnalysis.credibility_signals.credibility_score}/100</p>
-                    <p class="${contentAnalysis.credibility_signals.has_author_info ? 'good' : 'warning'}">
-                        <strong>Author Info:</strong> ${contentAnalysis.credibility_signals.has_author_info ? '✓ Yes' : '✗ No'}
-                    </p>
-                    <p><strong>External Links:</strong> ${contentAnalysis.credibility_signals.external_links}</p>
-                    <p><strong>Quality Links:</strong> ${contentAnalysis.credibility_signals.quality_links}</p>
-                    <p><strong>Credibility Markers:</strong> ${contentAnalysis.credibility_signals.credibility_markers}</p>
-                `;
-                contentMetrics.appendChild(credDiv);
-            }
-            
-            // Brevity
-            if (contentAnalysis.brevity_score) {
-                const brevityDiv = document.createElement('div');
-                brevityDiv.className = 'content-metric';
-                const brevityClass = contentAnalysis.brevity_score.is_concise ? 'good' : 'warning';
-                brevityDiv.innerHTML = `
-                    <h4 class="font-semibold mb-2">Content Brevity</h4>
-                    <p class="${brevityClass}"><strong>Status:</strong> ${contentAnalysis.brevity_score.recommendation}</p>
-                    <p><strong>Brevity Score:</strong> ${contentAnalysis.brevity_score.brevity_score}/100</p>
-                    <p><strong>Avg Sentence Length:</strong> ${contentAnalysis.brevity_score.avg_sentence_length} words</p>
-                    <p><strong>Filler Word Density:</strong> ${contentAnalysis.brevity_score.filler_word_density}%</p>
-                    <p><strong>Redundant Phrases:</strong> ${contentAnalysis.brevity_score.redundant_phrases}</p>
-                `;
-                contentMetrics.appendChild(brevityDiv);
-            }
-            
-            // Wikipedia Presence
-            if (contentAnalysis.wikipedia_presence) {
-                const wikiDiv = document.createElement('div');
-                wikiDiv.className = 'content-metric';
-                const wikiClass = contentAnalysis.wikipedia_presence.wikipedia_ready ? 'good' : 'warning';
-                wikiDiv.innerHTML = `
-                    <h4 class="font-semibold mb-2">Wikipedia Presence</h4>
-                    <p class="${wikiClass}"><strong>Wikipedia Ready:</strong> ${contentAnalysis.wikipedia_presence.wikipedia_ready ? '✓ Yes' : '✗ No'}</p>
-                    <p><strong>Wikipedia Links:</strong> ${contentAnalysis.wikipedia_presence.wikipedia_links}</p>
-                    <p><strong>Neutral POV Score:</strong> ${contentAnalysis.wikipedia_presence.neutral_pov_score}/100</p>
-                    <p><strong>Verifiability Score:</strong> ${contentAnalysis.wikipedia_presence.verifiability_score}/100</p>
-                    <p><strong>Notability Indicators:</strong> ${contentAnalysis.wikipedia_presence.notability_indicators}</p>
-                    ${contentAnalysis.wikipedia_presence.has_wikipedia_style ? 
-                        '<p class="good"><strong>Style:</strong> ✓ Follows Wikipedia style</p>' : 
-                        '<p class="bad"><strong>Style:</strong> ✗ Does not follow Wikipedia style</p>'}
-                `;
+            // Helper function to create expandable task
+            function createExpandableTask(task, explainerKey) {
+                const taskId = 'task-' + Math.random().toString(36).substr(2, 9);
+                const taskDiv = document.createElement('div');
+                taskDiv.className = 'workflow-task';
                 
-                // Add Wikipedia citations if any
-                if (contentAnalysis.wikipedia_presence.wikipedia_citations.length > 0) {
-                    let citationsHtml = '<p class="mt-2"><strong>Wikipedia Citations:</strong></p><ul class="text-sm ml-4">';
-                    contentAnalysis.wikipedia_presence.wikipedia_citations.forEach(citation => {
-                        citationsHtml += `<li>• <a href="${citation.url}" target="_blank" class="text-blue-600 hover:underline">${citation.title}</a></li>`;
-                    });
-                    citationsHtml += '</ul>';
-                    wikiDiv.innerHTML += citationsHtml;
+                // Find matching explainer
+                let explainer = null;
+                for (const key in taskExplainers) {
+                    if (task.task.includes(key)) {
+                        explainer = taskExplainers[key];
+                        break;
+                    }
                 }
                 
-                contentMetrics.appendChild(wikiDiv);
+                taskDiv.innerHTML = `
+                    <div class="task-checkbox"></div>
+                    <div class="flex-1">
+                        <div class="flex items-start justify-between">
+                            <div class="flex-1">
+                                <p class="font-medium">${task.task}</p>
+                                <p class="text-sm text-gray-600 mt-1">${task.impact}</p>
+                            </div>
+                            ${explainer ? `
+                                <span class="expand-toggle" onclick="toggleExplainer('${taskId}')">
+                                    Learn more
+                                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </span>
+                            ` : ''}
+                        </div>
+                        ${explainer ? `
+                            <div id="${taskId}" class="expandable-content">
+                                <div class="explainer-box mt-2">
+                                    <h5 class="font-semibold mb-2">${explainer.title}</h5>
+                                    <p class="mb-2">${explainer.content}</p>
+                                    <p class="text-sm italic">${explainer.example}</p>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+                
+                return taskDiv;
+            }
+            
+            // Quick Wins
+            if (workflow.quick_wins && workflow.quick_wins.length > 0) {
+                const quickWinsDiv = document.createElement('div');
+                quickWinsDiv.className = 'workflow-phase';
+                quickWinsDiv.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-3 flex items-center">
+                        <span class="emoji-icon mr-2">⚡</span>
+                        Phase 1: Quick Wins (2-4 hours)
+                        <span class="priority-badge priority-high">+15 points</span>
+                    </h3>
+                `;
+                
+                workflow.quick_wins.forEach(task => {
+                    quickWinsDiv.appendChild(createExpandableTask(task));
+                });
+                
+                workflowContent.appendChild(quickWinsDiv);
+            }
+            
+            // Deep Optimizations
+            if (workflow.deep_optimizations && workflow.deep_optimizations.length > 0) {
+                const deepOptDiv = document.createElement('div');
+                deepOptDiv.className = 'workflow-phase';
+                deepOptDiv.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-3 flex items-center">
+                        <span class="emoji-icon mr-2">🔨</span>
+                        Phase 2: Content Restructuring (2-3 days)
+                        <span class="priority-badge priority-medium">+20 points</span>
+                    </h3>
+                `;
+                
+                workflow.deep_optimizations.forEach(task => {
+                    deepOptDiv.appendChild(createExpandableTask(task));
+                });
+                
+                workflowContent.appendChild(deepOptDiv);
+            }
+            
+            // Strategic Initiatives
+            if (workflow.strategic_initiatives && workflow.strategic_initiatives.length > 0) {
+                const strategicDiv = document.createElement('div');
+                strategicDiv.className = 'workflow-phase';
+                strategicDiv.innerHTML = `
+                    <h3 class="text-lg font-semibold mb-3 flex items-center">
+                        <span class="emoji-icon mr-2">🚀</span>
+                        Phase 3: Strategic Transformation
+                        <span class="priority-badge priority-low">+25 points</span>
+                    </h3>
+                `;
+                
+                workflow.strategic_initiatives.forEach(task => {
+                    strategicDiv.appendChild(createExpandableTask(task));
+                });
+                
+                workflowContent.appendChild(strategicDiv);
+                
+                // Add CTA after strategic initiatives
+                const ctaDiv = document.createElement('div');
+                ctaDiv.className = 'mt-4 p-4 bg-gray-50 rounded-lg text-center';
+                ctaDiv.innerHTML = `
+                    <p class="text-gray-700 mb-3">
+                        <strong>This is complex work.</strong> Let's discuss how I can accelerate your AI optimization journey.
+                    </p>
+                    <a href="https://innatec3.com/home#contact" class="btn-primary font-bold py-2 px-6 rounded inline-block">
+                        Get Expert Help
+                    </a>
+                `;
+                workflowContent.appendChild(ctaDiv);
             }
         }
+        
+        // Toggle function for expandable content
+        function toggleExplainer(taskId) {
+            const content = document.getElementById(taskId);
+            const toggle = content.previousElementSibling.querySelector('.expand-toggle');
+            
+            if (content.classList.contains('expanded')) {
+                content.classList.remove('expanded');
+                toggle.classList.remove('expanded');
+            } else {
+                content.classList.add('expanded');
+                toggle.classList.add('expanded');
+            }
+        }
+        
+        
+        function displayScoreBreakdown(breakdown) {
+            // Tooltips for technical terms
+            const categoryTooltips = {
+                'Title & Meta Description': 'The page title appears in browser tabs and search results. Meta descriptions are short summaries shown under the title in search results.',
+                'Heading Structure': 'H1-H6 tags organize content hierarchically. H1 is the main title, H2 for major sections, H3 for subsections, etc.',
+                'Image Alt Text': 'Alternative text describes images for screen readers and search engines when images can\'t be displayed.',
+                'Structured Data': 'Special code (JSON-LD) that helps AI understand your content type (recipes, products, events, etc.)',
+                'Semantic HTML': 'HTML tags that describe content meaning (article, nav, header) rather than just appearance.',
+                'Data Organization': 'Tables organize data in rows/columns. Forms collect user input.',
+                'Crawlability Files': 'robots.txt tells AI what to crawl. sitemap.xml lists all your pages.',
+                'Social Media Tags': 'Open Graph (used by Facebook, LinkedIn, etc.) and Twitter/X Card tags control how your links appear when shared on social media. Instagram and TikTok use Open Graph tags.',
+                'Canonical Tag': 'Tells search engines which version of a page is the "main" one to avoid duplicate content.',
+                'Language & Charset': 'HTML lang declares the page language. Charset defines text encoding (usually UTF-8).',
+                'Content Readability': 'How easy your content is to read and understand, measured by sentence length and word complexity.',
+                'Content Tone & Factuality': 'Balance between promotional marketing language and objective, fact-based content.',
+                'Answer Optimization': 'How well content is structured to directly answer questions (FAQs, Q&A format).',
+                'Credibility & Authority': 'Signals that establish expertise: author info, citations, quality external links.',
+                'Content Brevity': 'Conciseness and clarity - avoiding filler words and redundant phrases.'
+            };
+            
+            // Define which categories belong to technical vs content
+            const technicalCategories = ['Title & Meta Description', 'Heading Structure', 'Image Alt Text', 
+                                       'Structured Data', 'Semantic HTML', 'Data Organization', 
+                                       'Crawlability Files', 'Social Media Tags', 'Canonical Tag', 
+                                       'Language & Charset'];
+            const contentCategories = ['Content Readability', 'Content Tone & Factuality', 
+                                     'Answer Optimization', 'Credibility & Authority', 'Content Brevity'];
+            
+            // Separate categories
+            const technicalMetrics = breakdown.categories.filter(cat => technicalCategories.includes(cat.name));
+            const contentMetrics = breakdown.categories.filter(cat => contentCategories.includes(cat.name));
+            
+            // Calculate totals
+            const technicalEarned = technicalMetrics.reduce((sum, cat) => sum + cat.earned, 0);
+            const technicalPossible = technicalMetrics.reduce((sum, cat) => sum + cat.possible, 0);
+            const contentEarned = contentMetrics.reduce((sum, cat) => sum + cat.earned, 0);
+            const contentPossible = contentMetrics.reduce((sum, cat) => sum + cat.possible, 0);
+            
+            // Update section totals
+            document.getElementById('technicalTotal').textContent = `(${technicalEarned}/${technicalPossible} points)`;
+            document.getElementById('contentTotal').textContent = `(${contentEarned}/${contentPossible} points)`;
+            
+            // Function to create metric card
+            function createMetricCard(category) {
+                const percentage = category.possible > 0 ? Math.round((category.earned / category.possible) * 100) : 0;
+                const borderColor = percentage >= 80 ? '#00a651' : percentage >= 50 ? '#ff9500' : '#ff3b30';
+                const tooltip = categoryTooltips[category.name];
+                
+                const card = document.createElement('div');
+                card.className = 'metric-card p-4 rounded';
+                card.style.borderLeftColor = borderColor;
+                card.innerHTML = `
+                    <div class="font-semibold text-sm mb-2 flex items-center">
+                        ${category.name}
+                        ${tooltip ? `
+                            <span class="tooltip-trigger">?
+                                <span class="tooltip-content">${tooltip}</span>
+                            </span>
+                        ` : ''}
+                    </div>
+                    <div class="text-2xl font-bold mb-1" style="color: ${borderColor}">
+                        ${category.earned}/${category.possible}
+                    </div>
+                    <div class="text-xs text-gray-600">${category.details}</div>
+                `;
+                return card;
+            }
+            
+            // Display technical metrics
+            const technicalGrid = document.getElementById('technicalMetrics');
+            technicalGrid.innerHTML = '';
+            technicalMetrics.forEach(metric => {
+                technicalGrid.appendChild(createMetricCard(metric));
+            });
+            
+            // Display content metrics
+            const contentGrid = document.getElementById('contentMetrics');
+            contentGrid.innerHTML = '';
+            contentMetrics.forEach(metric => {
+                contentGrid.appendChild(createMetricCard(metric));
+            });
+            
+            // Display penalties if any
+            if (breakdown.penalties && breakdown.penalties.length > 0) {
+                const penaltiesSection = document.getElementById('penaltiesSection');
+                const penaltiesList = document.getElementById('penaltiesList');
+                
+                penaltiesSection.classList.remove('hidden');
+                penaltiesList.innerHTML = '';
+                
+                breakdown.penalties.forEach(penalty => {
+                    const penaltyDiv = document.createElement('div');
+                    penaltyDiv.className = 'text-sm text-red-600';
+                    penaltyDiv.innerHTML = `• ${penalty.name}: <strong>${penalty.points} points</strong>`;
+                    penaltiesList.appendChild(penaltyDiv);
+                });
+            }
+            
+            // Update total score display
+            document.getElementById('totalScoreDisplay').textContent = `${breakdown.final_score}/100`;
+        }
+        
 
         function showError(message) {
             const errorMsg = document.getElementById('errorMsg');
@@ -799,12 +1049,12 @@
             
             // Show feedback
             const shareBtn = document.getElementById('shareBtn');
-            const originalText = shareBtn.textContent;
-            shareBtn.textContent = 'Link Copied!';
+            const originalText = shareBtn.innerHTML;
+            shareBtn.innerHTML = 'Link Copied!';
             shareBtn.style.backgroundColor = '#00a651';
             
             setTimeout(() => {
-                shareBtn.textContent = originalText;
+                shareBtn.innerHTML = originalText;
                 shareBtn.style.backgroundColor = '';
             }, 2000);
         }

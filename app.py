@@ -89,6 +89,102 @@ def fetch_webpage_content(url):
         print(f"Error fetching URL: {e}")
         return None
 
+def generate_optimization_workflow(analysis, score):
+    """Generate a step-by-step optimization workflow based on analysis results."""
+    workflow = {
+        'quick_wins': [],
+        'deep_optimizations': [],
+        'strategic_initiatives': []
+    }
+    
+    # Quick Wins (1-2 hours)
+    if not analysis.get('meta_description'):
+        workflow['quick_wins'].append({
+            'task': 'Add meta descriptions to all pages',
+            'impact': 'Helps AI understand page context quickly'
+        })
+    
+    if analysis.get('images', {}).get('without_alt', 0) > 0:
+        workflow['quick_wins'].append({
+            'task': f"Add alt text to {analysis['images']['without_alt']} images",
+            'impact': 'Makes visual content accessible to AI systems'
+        })
+    
+    if not analysis.get('robots_txt'):
+        workflow['quick_wins'].append({
+            'task': 'Create robots.txt file',
+            'impact': 'Ensures AI crawlers can access your content'
+        })
+    
+    if not analysis.get('sitemap_xml'):
+        workflow['quick_wins'].append({
+            'task': 'Generate and submit sitemap.xml',
+            'impact': 'Helps AI discover all your content'
+        })
+    
+    # Content-specific quick wins
+    if 'content_analysis' in analysis:
+        ca = analysis['content_analysis']
+        if ca.get('credibility_signals', {}).get('has_author_info') == False:
+            workflow['quick_wins'].append({
+                'task': 'Add author bylines and credentials',
+                'impact': 'Increases content credibility for AI evaluation'
+            })
+    
+    # Deep Optimizations (2-3 days)
+    if not analysis.get('structured_data'):
+        workflow['deep_optimizations'].append({
+            'task': 'Implement structured data markup (Schema.org)',
+            'impact': 'Critical for AI understanding - enables rich results'
+        })
+    
+    if not analysis.get('faq_detected'):
+        workflow['deep_optimizations'].append({
+            'task': 'Create comprehensive FAQ sections',
+            'impact': 'AI systems prioritize Q&A format for direct answers'
+        })
+    
+    if 'content_analysis' in analysis:
+        ca = analysis['content_analysis']
+        if ca.get('promotional_language', {}).get('is_promotional'):
+            workflow['deep_optimizations'].append({
+                'task': 'Rewrite promotional content with factual focus',
+                'impact': 'AI prefers objective, fact-based content'
+            })
+        
+        if not ca.get('factual_content', {}).get('is_fact_based'):
+            workflow['deep_optimizations'].append({
+                'task': 'Add statistics, research citations, and data',
+                'impact': 'Factual content is more likely to be cited by AI'
+            })
+    
+    # Strategic Initiatives
+    workflow['strategic_initiatives'].append({
+        'task': 'Develop topical authority content strategy',
+        'impact': 'Establishes your brand as the go-to source for AI'
+    })
+    
+    workflow['strategic_initiatives'].append({
+        'task': 'Build knowledge graph-aligned content',
+        'impact': 'Helps AI understand entity relationships'
+    })
+    
+    if 'content_analysis' in analysis:
+        ca = analysis['content_analysis']
+        if ca.get('wikipedia_presence', {}).get('wikipedia_ready') == False:
+            workflow['strategic_initiatives'].append({
+                'task': 'Create Wikipedia-style neutral content',
+                'impact': 'AI models are heavily trained on Wikipedia format'
+            })
+    
+    workflow['strategic_initiatives'].append({
+        'task': 'Implement advanced schema strategies',
+        'impact': 'Enables AI to extract specific data points'
+    })
+    
+    return workflow
+
+
 def analyze_webpage_structure(html_content, url):
     """Analyze the structure and content of a webpage, including advanced discoverability checks."""
     soup = BeautifulSoup(html_content, 'html.parser')
@@ -535,6 +631,9 @@ def analyze():
     # Calculate overall score and get breakdown
     score, score_breakdown = calculate_ai_readiness_score(analysis)
     
+    # Generate optimization workflow
+    workflow = generate_optimization_workflow(analysis, score)
+    
     # Generate unique ID for this result
     result_id = str(uuid.uuid4())
     
@@ -545,6 +644,7 @@ def analyze():
         'recommendations': ai_recommendations,
         'score': score,
         'score_breakdown': score_breakdown,
+        'workflow': workflow,
         'timestamp': datetime.now().isoformat(),
         'created_at': datetime.now()
     }
@@ -561,6 +661,7 @@ def analyze():
         'recommendations': ai_recommendations,
         'score': score,
         'score_breakdown': score_breakdown,
+        'workflow': workflow,
         'timestamp': result_data['timestamp']
     })
 
@@ -626,11 +727,13 @@ def calculate_ai_readiness_score(analysis):
     if len(analysis['headings']['h2']) > 0:
         heading_score += 6
     score += heading_score
+    # Count all heading levels
+    all_headings = sum(len(analysis['headings'][f'h{i}']) for i in range(1, 7))
     breakdown['categories'].append({
         'name': 'Heading Structure',
         'earned': heading_score,
         'possible': 12,
-        'details': f"H1: {len(analysis['headings']['h1'])}, H2: {len(analysis['headings']['h2'])}"
+        'details': f"H1: {len(analysis['headings']['h1'])}, H2: {len(analysis['headings']['h2'])}, H3-H6: {sum(len(analysis['headings'][f'h{i}']) for i in range(3, 7))} (Total: {all_headings})"
     })
 
     # Images with alt text (10 points)
@@ -638,14 +741,16 @@ def calculate_ai_readiness_score(analysis):
     if analysis['images']['total'] > 0:
         alt_ratio = analysis['images']['with_alt'] / analysis['images']['total']
         image_score = int(10 * alt_ratio)
+        details = f"{analysis['images']['with_alt']}/{analysis['images']['total']} images have alt text"
     else:
-        image_score = 10
+        image_score = 10  # Full points if no images (not a penalty)
+        details = "No images to optimize (not applicable)"
     score += image_score
     breakdown['categories'].append({
         'name': 'Image Alt Text',
         'earned': image_score,
         'possible': 10,
-        'details': f"{analysis['images']['with_alt']}/{analysis['images']['total']} images have alt text" if analysis['images']['total'] > 0 else "No images found"
+        'details': details
     })
 
     # Structured data (15 points)
@@ -710,7 +815,7 @@ def calculate_ai_readiness_score(analysis):
         'name': 'Social Media Tags',
         'earned': social_score,
         'possible': 10,
-        'details': f"OG: {len(analysis.get('open_graph_tags', []))}, Twitter: {len(analysis.get('twitter_card_tags', []))}"
+        'details': f"Open Graph: {len(analysis.get('open_graph_tags', []))} tags, Twitter/X Cards: {len(analysis.get('twitter_card_tags', []))} tags"
     })
 
     # Canonical tag (6 points)
@@ -734,7 +839,7 @@ def calculate_ai_readiness_score(analysis):
         'name': 'Language & Charset',
         'earned': lang_score,
         'possible': 8,
-        'details': f"Lang: {analysis.get('html_lang', 'Missing')}, Charset: {analysis.get('meta_charset', 'Missing')}"
+        'details': f"Lang: {analysis.get('html_lang') if analysis.get('html_lang') else '✗'}, Charset: {analysis.get('meta_charset') if analysis.get('meta_charset') else '✗'}"
     })
 
     # Content Quality Scoring (50 additional points)
@@ -751,11 +856,17 @@ def calculate_ai_readiness_score(analysis):
             elif ca['readability']['flesch_reading_ease'] >= 30:
                 readability_score = 4
         score += readability_score
+        # Handle missing textstat library gracefully
+        if ca['readability'].get('interpretation') == 'Textstat library not available for readability analysis':
+            readability_details = 'Readability analysis unavailable (library not installed)'
+        else:
+            readability_details = ca['readability'].get('interpretation', 'Not analyzed')
+        
         breakdown['categories'].append({
             'name': 'Content Readability',
             'earned': readability_score,
             'possible': 10,
-            'details': ca['readability'].get('interpretation', 'Not analyzed')
+            'details': readability_details
         })
         
         # Promotional vs Factual Content (15 points)
@@ -771,11 +882,15 @@ def calculate_ai_readiness_score(analysis):
             content_tone_score += 4
         
         score += content_tone_score
+        # Create clearer details for tone and factuality
+        promo_status = "Good" if not ca['promotional_language'].get('is_promotional', True) else "Too promotional"
+        factual_status = f"Factual content: {ca['factual_content'].get('statistics_count', 0)} statistics, {ca['factual_content'].get('citation_count', 0)} citations"
+        
         breakdown['categories'].append({
             'name': 'Content Tone & Factuality',
             'earned': content_tone_score,
             'possible': 15,
-            'details': f"Promotional: {ca['promotional_language'].get('recommendation', 'N/A')}, Factual Score: {ca['factual_content'].get('factual_score', 0)}"
+            'details': f"{promo_status} - {factual_status}"
         })
         
         # Answer Optimization (10 points)
@@ -803,11 +918,16 @@ def calculate_ai_readiness_score(analysis):
         elif ca['credibility_signals'].get('credibility_score', 0) >= 30:
             cred_score = 4
         score += cred_score
+        # Build comprehensive credibility details
+        author_status = "✓" if ca['credibility_signals'].get('has_author_info') else "✗"
+        citations = ca['factual_content'].get('citation_count', 0)
+        quality_links = ca['credibility_signals'].get('quality_links', 0)
+        
         breakdown['categories'].append({
             'name': 'Credibility & Authority',
             'earned': cred_score,
             'possible': 10,
-            'details': f"Score: {ca['credibility_signals'].get('credibility_score', 0)}, Quality Links: {ca['credibility_signals'].get('quality_links', 0)}"
+            'details': f"Author info: {author_status}, Citations: {citations}, Quality links: {quality_links}"
         })
         
         # Content Brevity (5 points)

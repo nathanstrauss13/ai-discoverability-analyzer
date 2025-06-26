@@ -81,7 +81,7 @@ class ContentAnalyzer:
             'credibility_signals': self._analyze_credibility(text, soup),
             'content_structure': self._analyze_content_structure(soup),
             'brevity_score': self._calculate_brevity_score(text, soup),
-            'wikipedia_presence': self._analyze_wikipedia_presence(text, soup)
+            'academic_style': self._analyze_academic_style(text, soup)
         }
         
         return analysis
@@ -220,9 +220,28 @@ class ContentAnalyzer:
         # Count factual indicators
         factual_count = sum(1 for indicator in self.factual_indicators if indicator in text_lower)
         
-        # Look for statistics and numbers
-        numbers = re.findall(r'\b\d+(?:\.\d+)?%?\b', text)
-        statistics_count = len(numbers)
+        # Look for meaningful statistics and numbers (not just any number)
+        # Pattern matches percentages, statistics with context, measurements, etc.
+        statistic_patterns = [
+            r'\b\d+(?:\.\d+)?%',  # Percentages (e.g., 75%)
+            r'\b\d+(?:\.\d+)?\s*(?:percent|million|billion|thousand)',  # Numbers with units
+            r'(?:increased?|decreased?|grew|fell|rose|dropped)\s*(?:by\s*)?\d+',  # Change statistics
+            r'\b\d+\s*(?:out of|of)\s*\d+',  # Ratios (e.g., 9 out of 10)
+            r'(?:study|survey|research).*?\d+',  # Studies with numbers
+            r'\$\d+(?:\.\d+)?(?:\s*(?:million|billion|thousand))?',  # Financial figures
+            r'\b\d+(?:\.\d+)?\s*(?:times|x)\s*(?:more|less|greater|higher|lower)',  # Comparisons
+        ]
+        
+        statistics_count = 0
+        numbers_found = []
+        
+        for pattern in statistic_patterns:
+            matches = re.findall(pattern, text, re.IGNORECASE)
+            statistics_count += len(matches)
+            numbers_found.extend(matches[:3])  # Keep first 3 of each type
+        
+        # Remove duplicates and limit to 10
+        numbers_found = list(dict.fromkeys(numbers_found))[:10]
         
         # Look for citations or references
         citation_patterns = [
@@ -239,7 +258,7 @@ class ContentAnalyzer:
             'factual_indicators': factual_count,
             'statistics_count': statistics_count,
             'citation_count': citation_count,
-            'numbers_found': numbers[:10],  # First 10 numbers
+            'numbers_found': numbers_found,
             'factual_score': self._calculate_factual_score(factual_count, statistics_count, citation_count),
             'is_fact_based': factual_count > 3 or statistics_count > 5
         }
@@ -504,16 +523,16 @@ class ContentAnalyzer:
         else:
             return "Poor - Significant editing needed for clarity"
 
-    def _analyze_wikipedia_presence(self, text, soup):
-        """Analyze Wikipedia presence and Wikipedia-readiness of content"""
+    def _analyze_academic_style(self, text, soup):
+        """Analyze academic writing style (similar to Wikipedia)"""
         analysis = {
             'wikipedia_links': 0,
             'wikipedia_citations': [],
-            'has_wikipedia_style': False,
+            'has_academic_style': False,
             'neutral_pov_score': 0,
             'notability_indicators': 0,
             'verifiability_score': 0,
-            'wikipedia_ready': False,
+            'academic_ready': False,
             'recommendations': []
         }
         
@@ -587,27 +606,27 @@ class ContentAnalyzer:
         
         analysis['verifiability_score'] = min(100, verifiable_elements * 10)
         
-        # Determine if content follows Wikipedia style
+        # Determine if content follows academic style (similar to Wikipedia)
         has_sections = len(soup.find_all(['h2', 'h3'])) > 3
         has_lead_paragraph = len(soup.find_all('p')) > 0 and len(soup.find('p').get_text().split()) > 50
         has_citations = inline_citations > 0 or analysis['wikipedia_links'] > 0
         
-        analysis['has_wikipedia_style'] = (
+        analysis['has_academic_style'] = (
             has_sections and 
             has_lead_paragraph and 
             has_citations and
             analysis['neutral_pov_score'] > 60
         )
         
-        # Determine Wikipedia readiness
-        analysis['wikipedia_ready'] = (
+        # Determine academic readiness
+        analysis['academic_ready'] = (
             analysis['neutral_pov_score'] > 70 and
             analysis['verifiability_score'] > 50 and
             analysis['notability_indicators'] > 3 and
             not self._detect_promotional_language(text)['is_promotional']
         )
         
-        # Generate Wikipedia-specific recommendations
+        # Generate academic style recommendations
         if analysis['wikipedia_links'] == 0:
             analysis['recommendations'].append(
                 "Add Wikipedia citations to establish connection with Wikipedia's knowledge base"
@@ -615,7 +634,7 @@ class ContentAnalyzer:
         
         if analysis['neutral_pov_score'] < 70:
             analysis['recommendations'].append(
-                "Adopt a more neutral tone by removing opinion-based language and promotional content"
+                "Adopt a more neutral, academic tone by removing opinion-based language and promotional content"
             )
         
         if analysis['verifiability_score'] < 50:
@@ -630,7 +649,7 @@ class ContentAnalyzer:
         
         if not has_sections:
             analysis['recommendations'].append(
-                "Organize content with clear sections and subsections like Wikipedia articles"
+                "Organize content with clear sections and subsections (similar to Wikipedia articles)"
             )
         
         return analysis
@@ -721,20 +740,20 @@ class ContentAnalyzer:
                 'impact': 'Lists are easily parsed by AI and improve content extraction'
             })
         
-        # Wikipedia presence recommendations
-        if 'wikipedia_presence' in content_analysis:
-            wiki = content_analysis['wikipedia_presence']
+        # Academic style recommendations
+        if 'academic_style' in content_analysis:
+            academic = content_analysis['academic_style']
             
-            if not wiki['wikipedia_ready']:
+            if not academic['academic_ready']:
                 recommendations.append({
-                    'category': 'Wikipedia Optimization',
+                    'category': 'Academic Writing Style',
                     'priority': 'High',
-                    'issue': 'Content is not Wikipedia-ready',
-                    'action': 'Follow Wikipedia content guidelines: neutral tone, verifiable sources, notable information, and proper citations.',
-                    'impact': 'Wikipedia-ready content significantly increases AI visibility as LLMs are heavily trained on Wikipedia'
+                    'issue': 'Content lacks academic writing style',
+                    'action': 'Follow academic writing guidelines (similar to Wikipedia): neutral tone, verifiable sources, notable information, and proper citations.',
+                    'impact': 'Academic-style content significantly increases AI visibility as LLMs are heavily trained on Wikipedia and academic sources'
                 })
             
-            if wiki['wikipedia_links'] == 0:
+            if academic['wikipedia_links'] == 0:
                 recommendations.append({
                     'category': 'Wikipedia Integration',
                     'priority': 'Medium',
@@ -743,12 +762,12 @@ class ContentAnalyzer:
                     'impact': 'Wikipedia citations signal content authority and improve AI trust scores'
                 })
             
-            if wiki['neutral_pov_score'] < 70:
+            if academic['neutral_pov_score'] < 70:
                 recommendations.append({
                     'category': 'Content Neutrality',
                     'priority': 'High',
-                    'issue': f"Low neutral point of view score ({wiki['neutral_pov_score']}/100)",
-                    'action': 'Adopt Wikipedia\'s neutral tone by removing subjective language and opinion-based statements.',
+                    'issue': f"Low neutral point of view score ({academic['neutral_pov_score']}/100)",
+                    'action': 'Adopt a neutral, academic tone (similar to Wikipedia) by removing subjective language and opinion-based statements.',
                     'impact': 'Neutral content is more likely to be referenced by AI as a reliable source'
                 })
         
