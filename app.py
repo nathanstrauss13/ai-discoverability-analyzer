@@ -755,13 +755,13 @@ def calculate_ai_readiness_score(analysis):
         'details': details
     })
 
-    # Structured data (7 points)
-    structured_score = 7 if analysis['structured_data'] else 0
+    # Structured data (8 points)
+    structured_score = 8 if analysis['structured_data'] else 0
     score += structured_score
     breakdown['categories'].append({
         'name': 'Structured Data',
         'earned': structured_score,
-        'possible': 7,
+        'possible': 8,
         'details': 'JSON-LD present' if analysis['structured_data'] else 'No structured data found'
     })
 
