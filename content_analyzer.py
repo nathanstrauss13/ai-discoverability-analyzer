@@ -25,7 +25,13 @@ except ImportError:
 try:
     from textstat import flesch_reading_ease, flesch_kincaid_grade
     TEXTSTAT_AVAILABLE = True
-except ImportError:
+except ImportError as e:
+    print(f"Failed to import textstat: {e}")
+    TEXTSTAT_AVAILABLE = False
+    flesch_reading_ease = None
+    flesch_kincaid_grade = None
+except Exception as e:
+    print(f"Unexpected error importing textstat: {e}")
     TEXTSTAT_AVAILABLE = False
     flesch_reading_ease = None
     flesch_kincaid_grade = None
