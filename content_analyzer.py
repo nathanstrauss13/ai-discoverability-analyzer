@@ -112,24 +112,85 @@ class ContentAnalyzer:
 
     def _analyze_readability(self, text):
         """Analyze text readability metrics"""
-        if not TEXTSTAT_AVAILABLE:
-            return {
-                'flesch_reading_ease': None,
-                'flesch_kincaid_grade': None,
-                'interpretation': 'Textstat library not available for readability analysis',
-                'ai_friendly': None
-            }
-            
         if len(text.split()) < 100:
             return {
                 'flesch_reading_ease': None,
                 'flesch_kincaid_grade': None,
-                'interpretation': 'Text too short for accurate readability analysis'
+                'interpretation': 'Text too short for accurate readability analysis',
+                'ai_friendly': None
             }
         
+        # Try using textstat if available
+        if TEXTSTAT_AVAILABLE:
+            try:
+                fre_score = flesch_reading_ease(text)
+                fkg_score = flesch_kincaid_grade(text)
+                
+                # Interpret Flesch Reading Ease
+                if fre_score >= 90:
+                    interpretation = "Very Easy (5th grade)"
+                elif fre_score >= 80:
+                    interpretation = "Easy (6th grade)"
+                elif fre_score >= 70:
+                    interpretation = "Fairly Easy (7th grade)"
+                elif fre_score >= 60:
+                    interpretation = "Standard (8-9th grade)"
+                elif fre_score >= 50:
+                    interpretation = "Fairly Difficult (10-12th grade)"
+                elif fre_score >= 30:
+                    interpretation = "Difficult (College)"
+                else:
+                    interpretation = "Very Difficult (College graduate)"
+                
+                return {
+                    'flesch_reading_ease': round(fre_score, 1),
+                    'flesch_kincaid_grade': round(fkg_score, 1),
+                    'interpretation': interpretation,
+                    'ai_friendly': fre_score >= 60  # AI prefers clear, accessible content
+                }
+            except Exception as e:
+                print(f"Error using textstat: {e}")
+                # Fall through to manual calculation
+        
+        # Fallback: Manual readability calculation
         try:
-            fre_score = flesch_reading_ease(text)
-            fkg_score = flesch_kincaid_grade(text)
+            # Basic text statistics
+            words = text.split()
+            word_count = len(words)
+            
+            # Sentence counting
+            if NLTK_AVAILABLE and nltk:
+                sentences = nltk.sent_tokenize(text)
+            else:
+                # Simple fallback sentence splitting
+                sentences = [s.strip() for s in re.split(r'[.!?]+', text) if s.strip()]
+            sentence_count = len(sentences) if sentences else 1
+            
+            # Calculate average sentence length
+            avg_sentence_length = word_count / sentence_count
+            
+            # Estimate syllables (simplified - counts vowel groups)
+            syllable_count = 0
+            for word in words:
+                word = word.lower()
+                # Count vowel groups as syllables (simplified)
+                vowel_groups = len(re.findall(r'[aeiouAEIOU]+', word))
+                # Adjust for silent e
+                if word.endswith('e') and vowel_groups > 1:
+                    vowel_groups -= 1
+                syllable_count += max(1, vowel_groups)  # Every word has at least 1 syllable
+            
+            avg_syllables_per_word = syllable_count / word_count if word_count > 0 else 0
+            
+            # Calculate Flesch Reading Ease (approximation)
+            # Formula: 206.835 - 1.015 * (words/sentences) - 84.6 * (syllables/words)
+            fre_score = 206.835 - 1.015 * avg_sentence_length - 84.6 * avg_syllables_per_word
+            fre_score = max(0, min(100, fre_score))  # Clamp to 0-100
+            
+            # Calculate Flesch-Kincaid Grade Level (approximation)
+            # Formula: 0.39 * (words/sentences) + 11.8 * (syllables/words) - 15.59
+            fkg_score = 0.39 * avg_sentence_length + 11.8 * avg_syllables_per_word - 15.59
+            fkg_score = max(0, fkg_score)  # Can't be negative
             
             # Interpret Flesch Reading Ease
             if fre_score >= 90:
@@ -147,17 +208,24 @@ class ContentAnalyzer:
             else:
                 interpretation = "Very Difficult (College graduate)"
             
+            # Add note about approximation
+            interpretation += " (approximated)"
+            
             return {
                 'flesch_reading_ease': round(fre_score, 1),
                 'flesch_kincaid_grade': round(fkg_score, 1),
                 'interpretation': interpretation,
-                'ai_friendly': fre_score >= 60  # AI prefers clear, accessible content
+                'ai_friendly': fre_score >= 60,  # AI prefers clear, accessible content
+                'calculation_method': 'fallback'
             }
-        except:
+            
+        except Exception as e:
+            print(f"Error in fallback readability calculation: {e}")
             return {
                 'flesch_reading_ease': None,
                 'flesch_kincaid_grade': None,
-                'interpretation': 'Unable to calculate readability scores'
+                'interpretation': 'Unable to calculate readability scores',
+                'ai_friendly': None
             }
 
     def _analyze_content_quality(self, text, soup):
