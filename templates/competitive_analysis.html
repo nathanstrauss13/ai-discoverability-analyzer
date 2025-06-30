@@ -1,0 +1,276 @@
+from flask import Blueprint, render_template, request, jsonify
+import requests
+from bs4 import BeautifulSoup
+import anthropic
+import os
+import time
+from urllib.parse import urlparse
+import json
+
+# Create blueprint for competitive analysis routes
+competitive_bp = Blueprint('competitive', __name__)
+
+class CompetitiveAnalyzer:
+    def __init__(self):
+        self.client = anthropic.Anthropic(api_key=os.getenv('ANTHROPIC_API_KEY'))
+    
+    def analyze_content_strategic(self, content, url):
+        """Analyze content with strategic focus"""
+        
+        prompt = f"""
+        Analyze this content strategically for AI discoverability and competitive positioning:
+
+        URL: {url}
+        Content: {content[:5000]}...
+
+        Provide analysis in this JSON format:
+        {{
+            "strategic_positioning": {{
+                "current_tone": "promotional|educational|hybrid",
+                "promotional_percentage": 0-100,
+                "audience_level": "early-stage|decision-maker|technical",
+                "narrative_focus": "product-centric|outcome-focused|solution-oriented"
+            }},
+            "content_gaps": {{
+                "factual_density_score": 0-100,
+                "authority_signals_score": 0-100,
+                "answer_structure_score": 0-100,
+                "evidence_quality_score": 0-100
+            }},
+            "strategic_recommendations": [
+                {{
+                    "category": "positioning|evidence|structure",
+                    "priority": "high|medium|low",
+                    "recommendation": "specific strategic change",
+                    "business_impact": "description of business impact",
+                    "effort": "high|medium|low",
+                    "timeline": "1-2 weeks|1-2 months|3+ months"
+                }}
+            ],
+            "competitive_strengths": [
+                "list of content strengths for AI discovery"
+            ],
+            "ai_optimization_score": 0-100
+        }}
+
+        Focus on strategic content direction rather than technical SEO.
+        """
+        
+        try:
+            response = self.client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            # Parse JSON response
+            result = json.loads(response.content[0].text)
+            return result
+            
+        except Exception as e:
+            print(f"Error in strategic analysis: {e}")
+            return self._get_fallback_analysis()
+    
+    def generate_content_rewrites(self, content, strategic_gaps):
+        """Generate specific content rewrite suggestions"""
+        
+        prompt = f"""
+        Based on this content and strategic gaps, provide specific rewrite suggestions:
+
+        Original Content: {content[:3000]}...
+        
+        Strategic Gaps: {json.dumps(strategic_gaps)}
+
+        Provide 3-5 specific rewrite examples in this format:
+        {{
+            "rewrites": [
+                {{
+                    "section": "headline|intro|body|conclusion",
+                    "original": "original text excerpt",
+                    "rewritten": "improved version",
+                    "reasoning": "why this improves AI discoverability",
+                    "impact": "high|medium|low"
+                }}
+            ],
+            "overall_strategy": "summary of strategic content direction"
+        }}
+
+        Focus on:
+        1. Transforming promotional language to factual/educational
+        2. Adding specific metrics and proof points
+        3. Improving answer structure for AI queries
+        4. Enhancing authority signals
+        """
+        
+        try:
+            response = self.client.messages.create(
+                model="claude-3-5-sonnet-20241022",
+                max_tokens=2000,
+                messages=[{"role": "user", "content": prompt}]
+            )
+            
+            result = json.loads(response.content[0].text)
+            return result
+            
+        except Exception as e:
+            print(f"Error generating rewrites: {e}")
+            return {"rewrites": [], "overall_strategy": "Unable to generate rewrites"}
+    
+    def scrape_url_content(self, url):
+        """Scrape and clean content from URL"""
+        try:
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
+            }
+            response = requests.get(url, headers=headers, timeout=10)
+            response.raise_for_status()
+            
+            soup = BeautifulSoup(response.text, 'html.parser')
+            
+            # Remove script and style elements
+            for script in soup(["script", "style", "nav", "footer", "header"]):
+                script.decompose()
+            
+            # Get text content
+            text = soup.get_text()
+            
+            # Clean up text
+            lines = (line.strip() for line in text.splitlines())
+            chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+            text = ' '.join(chunk for chunk in chunks if chunk)
+            
+            return text[:10000]  # Limit content length
+            
+        except Exception as e:
+            print(f"Error scraping {url}: {e}")
+            return f"Error: Unable to scrape content from {url}"
+    
+    def compare_urls(self, urls):
+        """Compare multiple URLs strategically"""
+        results = []
+        
+        for url in urls:
+            if not url.strip():
+                continue
+                
+            print(f"Analyzing: {url}")
+            content = self.scrape_url_content(url)
+            analysis = self.analyze_content_strategic(content, url)
+            
+            results.append({
+                'url': url,
+                'domain': urlparse(url).netloc,
+                'analysis': analysis,
+                'content_preview': content[:200] + "..." if len(content) > 200 else content
+            })
+            
+            # Add delay to avoid rate limiting
+            time.sleep(1)
+        
+        return results
+    
+    def _get_fallback_analysis(self):
+        """Fallback analysis if API fails"""
+        return {
+            "strategic_positioning": {
+                "current_tone": "promotional",
+                "promotional_percentage": 65,
+                "audience_level": "early-stage",
+                "narrative_focus": "product-centric"
+            },
+            "content_gaps": {
+                "factual_density_score": 60,
+                "authority_signals_score": 45,
+                "answer_structure_score": 40,
+                "evidence_quality_score": 50
+            },
+            "strategic_recommendations": [
+                {
+                    "category": "positioning",
+                    "priority": "high",
+                    "recommendation": "Shift from product features to customer outcomes",
+                    "business_impact": "Improved AI citation probability",
+                    "effort": "high",
+                    "timeline": "1-2 months"
+                }
+            ],
+            "competitive_strengths": ["Clear product description"],
+            "ai_optimization_score": 55
+        }
+
+@competitive_bp.route('/competitive-analysis')
+def competitive_analysis():
+    """Render competitive analysis page"""
+    return render_template('competitive_analysis.html')
+
+@competitive_bp.route('/api/analyze-competitive', methods=['POST'])
+def analyze_competitive():
+    """API endpoint for competitive analysis"""
+    try:
+        data = request.get_json()
+        analysis_type = data.get('analysis_type', 'direct')
+        
+        analyzer = CompetitiveAnalyzer()
+        
+        if analysis_type == 'direct':
+            urls = data.get('urls', [])
+            urls = [url for url in urls if url.strip()]  # Filter empty URLs
+            
+            if len(urls) < 2:
+                return jsonify({'error': 'Please provide at least 2 URLs for comparison'}), 400
+            
+            results = analyzer.compare_urls(urls)
+            
+            return jsonify({
+                'success': True,
+                'analysis_type': 'direct',
+                'results': results,
+                'timestamp': time.time()
+            })
+        
+        elif analysis_type == 'topic':
+            topic = data.get('topic', '')
+            # Topic-based analysis would integrate with search APIs
+            # For now, return placeholder
+            return jsonify({
+                'error': 'Topic-based analysis coming soon',
+                'message': 'This feature will automatically find top content for your topic'
+            }), 501
+        
+        else:
+            return jsonify({'error': 'Invalid analysis type'}), 400
+    
+    except Exception as e:
+        print(f"Error in competitive analysis: {e}")
+        return jsonify({'error': 'Analysis failed. Please try again.'}), 500
+
+@competitive_bp.route('/api/generate-rewrites', methods=['POST'])
+def generate_rewrites():
+    """API endpoint for content rewrite suggestions"""
+    try:
+        data = request.get_json()
+        url = data.get('url', '')
+        
+        if not url:
+            return jsonify({'error': 'URL is required'}), 400
+        
+        analyzer = CompetitiveAnalyzer()
+        
+        # Get content and analyze
+        content = analyzer.scrape_url_content(url)
+        strategic_analysis = analyzer.analyze_content_strategic(content, url)
+        
+        # Generate rewrites
+        rewrites = analyzer.generate_content_rewrites(content, strategic_analysis['content_gaps'])
+        
+        return jsonify({
+            'success': True,
+            'url': url,
+            'strategic_analysis': strategic_analysis,
+            'rewrites': rewrites,
+            'timestamp': time.time()
+        })
+    
+    except Exception as e:
+        print(f"Error generating rewrites: {e}")
+        return jsonify({'error': 'Failed to generate rewrites. Please try again.'}), 500

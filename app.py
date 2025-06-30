@@ -1,6 +1,7 @@
 import os
 import re
 import requests
+from competitive_analyzer import add_competitive_routes, COMPETITIVE_ANALYSIS_TEMPLATE
 from flask import Flask, render_template, request, jsonify, redirect, url_for
 from bs4 import BeautifulSoup
 from urllib.parse import urlparse, urljoin
@@ -17,6 +18,7 @@ from datetime import timedelta
 load_dotenv()
 
 app = Flask(__name__)
+add_competitive_routes(app)
 app.secret_key = os.environ.get("FLASK_SECRET_KEY", "your_secret_key_here")
 
 # Initialize Anthropic client
@@ -552,6 +554,10 @@ Keep recommendations specific, actionable, and focused on improving AI agent com
 def index():
     return render_template('index.html')
 
+@app.route('/competitive-analysis')
+def competitive_analysis():
+    return COMPETITIVE_ANALYSIS_TEMPLATE
+
 @app.route('/health')
 def health():
     return jsonify({'status': 'healthy', 'anthropic_configured': anthropic is not None}), 200
@@ -560,6 +566,7 @@ def health():
 def analyze():
     data = request.get_json()
     url = data.get('url', '').strip()
+    competitor_urls = data.get('competitor_urls', [])
     
     if not url:
         return jsonify({'error': 'Please provide a URL'}), 400
@@ -634,6 +641,27 @@ def analyze():
     # Generate optimization workflow
     workflow = generate_optimization_workflow(analysis, score)
     
+    # Handle competitive analysis if competitor URLs provided
+    competitive_results = None
+    if competitor_urls and len(competitor_urls) > 0:
+        from competitive_analyzer import CompetitiveAnalyzer
+        
+        # Clean and validate competitor URLs
+        clean_competitor_urls = []
+        for comp_url in competitor_urls:
+            comp_url = comp_url.strip()
+            if comp_url:
+                # Add protocol if missing
+                if not comp_url.startswith(('http://', 'https://', 'file://')):
+                    comp_url = 'https://' + comp_url
+                clean_competitor_urls.append(comp_url)
+        
+        if clean_competitor_urls:
+            analyzer = CompetitiveAnalyzer()
+            # Include the main URL as the first result (your content)
+            all_urls = [url] + clean_competitor_urls
+            competitive_results = analyzer.compare_urls(all_urls)
+    
     # Generate unique ID for this result
     result_id = str(uuid.uuid4())
     
@@ -645,6 +673,7 @@ def analyze():
         'score': score,
         'score_breakdown': score_breakdown,
         'workflow': workflow,
+        'competitive_results': competitive_results,
         'timestamp': datetime.now().isoformat(),
         'created_at': datetime.now()
     }
@@ -654,7 +683,7 @@ def analyze():
     # Clean up old results (keep only last 1000 or from last 24 hours)
     cleanup_old_results()
     
-    return jsonify({
+    response_data = {
         'success': True,
         'id': result_id,
         'analysis': analysis,
@@ -663,7 +692,13 @@ def analyze():
         'score_breakdown': score_breakdown,
         'workflow': workflow,
         'timestamp': result_data['timestamp']
-    })
+    }
+    
+    # Include competitive results if available
+    if competitive_results:
+        response_data['competitive_results'] = competitive_results
+    
+    return jsonify(response_data)
 
 def cleanup_old_results():
     """Remove results older than 24 hours or keep only the most recent 1000"""

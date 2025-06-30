@@ -429,6 +429,32 @@
                     </div>
                 </div>
                 
+                <!-- Optional Competitive Analysis Section -->
+                <div class="border border-gray-200 rounded-lg p-4 bg-gray-50">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="flex items-center text-gray-700 text-sm font-bold">
+                            <input type="checkbox" id="enableCompetitive" class="mr-2 rounded" onchange="toggleCompetitiveSection()">
+                            Compare with Competitors (Optional)
+                        </label>
+                        <span class="text-xs text-gray-500 bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Enhanced Analysis</span>
+                    </div>
+                    <div id="competitiveSection" class="hidden space-y-3">
+                        <p class="text-sm text-gray-600 mb-3">Add competitor URLs to see how your content strategy compares and get targeted recommendations.</p>
+                        <div id="competitorInputs">
+                            <div class="flex gap-2 mb-2">
+                                <input type="url" placeholder="Competitor URL..." 
+                                       class="competitor-url flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                            </div>
+                        </div>
+                        <button id="addCompetitorBtn" onclick="addCompetitorInput()" 
+                                class="text-blue-500 text-sm hover:text-blue-700 flex items-center">
+                            <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
+                            </svg>
+                            Add another competitor
+                        </button>
+                    </div>
+                </div>
                 
                 <div id="errorMsg" class="error-message hidden"></div>
             </div>
@@ -468,6 +494,14 @@
                 </div>
             </div>
             
+            <!-- Competitive Analysis Results Section -->
+            <div id="competitiveResults" class="card px-8 pt-6 pb-8 mb-4 fade-in hidden">
+                <h2 class="text-2xl font-bold mb-6">📊 Competitive Analysis Results</h2>
+                <p class="text-gray-600 mb-6">See how your content strategy compares to competitors and identify opportunities for improvement.</p>
+                <div id="competitiveContent">
+                    <!-- Competitive results will be inserted here -->
+                </div>
+            </div>
             
             <!-- Content Optimization Workflow -->
             <div id="workflowSection" class="card px-8 pt-6 pb-8 mb-4 fade-in">
@@ -578,6 +612,52 @@
             });
         }
         
+        function toggleCompetitiveSection() {
+            const checkbox = document.getElementById('enableCompetitive');
+            const section = document.getElementById('competitiveSection');
+            
+            if (checkbox.checked) {
+                section.classList.remove('hidden');
+            } else {
+                section.classList.add('hidden');
+            }
+        }
+        
+        function addCompetitorInput() {
+            const competitorInputs = document.getElementById('competitorInputs');
+            const currentInputs = competitorInputs.querySelectorAll('.competitor-url');
+            
+            if (currentInputs.length >= 4) {
+                document.getElementById('addCompetitorBtn').style.display = 'none';
+                return;
+            }
+            
+            const newInputDiv = document.createElement('div');
+            newInputDiv.className = 'flex gap-2 mb-2';
+            newInputDiv.innerHTML = `
+                <input type="url" placeholder="Competitor URL..." 
+                       class="competitor-url flex-1 px-3 py-2 border border-gray-300 rounded focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm">
+                <button onclick="removeCompetitorInput(this)" 
+                        class="px-3 py-2 text-red-500 hover:bg-red-50 rounded text-sm">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            `;
+            
+            competitorInputs.appendChild(newInputDiv);
+            
+            // Hide add button if we reach the limit
+            if (competitorInputs.querySelectorAll('.competitor-url').length >= 4) {
+                document.getElementById('addCompetitorBtn').style.display = 'none';
+            }
+        }
+        
+        function removeCompetitorInput(button) {
+            button.parentElement.remove();
+            document.getElementById('addCompetitorBtn').style.display = 'flex';
+        }
+
         function analyzeURL() {
             const urlInput = document.getElementById('urlInput');
             const url = urlInput.value.trim();
@@ -587,11 +667,33 @@
                 return;
             }
 
+            // Get competitor URLs if competitive analysis is enabled
+            const competitiveEnabled = document.getElementById('enableCompetitive').checked;
+            let competitorUrls = [];
+            
+            if (competitiveEnabled) {
+                const competitorInputs = document.querySelectorAll('.competitor-url');
+                competitorUrls = Array.from(competitorInputs)
+                    .map(input => input.value.trim())
+                    .filter(url => url);
+                
+                if (competitorUrls.length === 0) {
+                    showError('Please add at least one competitor URL or disable competitive analysis');
+                    return;
+                }
+            }
+
             // Reset UI
             hideError();
             document.getElementById('results').classList.add('hidden');
             document.getElementById('loading').classList.remove('hidden');
             document.getElementById('analyzeBtn').disabled = true;
+
+            // Prepare request data
+            const requestData = { url: url };
+            if (competitiveEnabled && competitorUrls.length > 0) {
+                requestData.competitor_urls = competitorUrls;
+            }
 
             // Make API call
             fetch('/analyze', {
@@ -599,7 +701,7 @@
                 headers: {
                     'Content-Type': 'application/json',
                 },
-                body: JSON.stringify({ url: url })
+                body: JSON.stringify(requestData)
             })
             .then(response => response.json())
             .then(data => {
@@ -662,12 +764,15 @@
                 scoreDescription.textContent = 'Significant improvements recommended';
             }
 
+            // Display competitive analysis if available
+            if (data.competitive_results) {
+                displayCompetitiveResults(data.competitive_results);
+            }
+
             // Display workflow if available
             if (data.workflow) {
                 displayWorkflow(data.workflow);
             }
-
-            // Competitive analysis removed
 
             // Display score breakdown if available
             if (data.score_breakdown) {
@@ -691,6 +796,144 @@
 
             // Scroll to results
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function displayCompetitiveResults(results) {
+            const competitiveSection = document.getElementById('competitiveResults');
+            const competitiveContent = document.getElementById('competitiveContent');
+            
+            // Show the competitive results section
+            competitiveSection.classList.remove('hidden');
+            
+            let html = '<div class="space-y-4">';
+            
+            results.forEach((result, index) => {
+                if (result.error) {
+                    html += `
+                        <div class="competitor-row border border-red-200 bg-red-50">
+                            <div class="flex-1">
+                                <h4 class="font-medium text-red-900">${result.domain}</h4>
+                                <p class="text-red-700 text-sm">${result.error}</p>
+                            </div>
+                        </div>
+                    `;
+                    return;
+                }
+                
+                const analysis = result.analysis;
+                const positioning = analysis.strategic_positioning;
+                const isYourContent = index === 0;
+                
+                // Determine score color
+                const scoreClass = analysis.ai_optimization_score >= 80 ? 'score-good' : 
+                                 analysis.ai_optimization_score >= 60 ? 'score-warning' : 'score-bad';
+                
+                html += `
+                    <div class="competitor-row ${isYourContent ? 'border-2 border-blue-500 bg-blue-50' : 'border border-gray-200'}">
+                        <div class="score-badge ${scoreClass}">
+                            ${analysis.ai_optimization_score}
+                        </div>
+                        <div class="flex-1">
+                            <div class="flex justify-between items-start mb-2">
+                                <div>
+                                    <h4 class="font-bold ${isYourContent ? 'text-blue-900' : 'text-gray-900'}">
+                                        ${isYourContent ? '🏠 Your Content' : '🏢 Competitor'}: ${result.domain}
+                                    </h4>
+                                    <p class="text-sm text-gray-600">${result.url}</p>
+                                </div>
+                                ${isYourContent ? '<span class="text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-full">Your Brand</span>' : ''}
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <span class="font-medium">Content Tone:</span>
+                                    <span class="ml-1">${positioning.current_tone} (${positioning.promotional_percentage}% promotional)</span>
+                                </div>
+                                <div>
+                                    <span class="font-medium">Audience Level:</span>
+                                    <span class="ml-1">${positioning.audience_level}</span>
+                                </div>
+                                <div>
+                                    <span class="font-medium">Focus:</span>
+                                    <span class="ml-1">${positioning.narrative_focus}</span>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                                <div class="bg-white px-2 py-1 rounded border">
+                                    <span class="text-gray-600">Factual:</span>
+                                    <span class="font-medium">${analysis.content_gaps.factual_density_score}/100</span>
+                                </div>
+                                <div class="bg-white px-2 py-1 rounded border">
+                                    <span class="text-gray-600">Authority:</span>
+                                    <span class="font-medium">${analysis.content_gaps.authority_signals_score}/100</span>
+                                </div>
+                                <div class="bg-white px-2 py-1 rounded border">
+                                    <span class="text-gray-600">Structure:</span>
+                                    <span class="font-medium">${analysis.content_gaps.answer_structure_score}/100</span>
+                                </div>
+                                <div class="bg-white px-2 py-1 rounded border">
+                                    <span class="text-gray-600">Evidence:</span>
+                                    <span class="font-medium">${analysis.content_gaps.evidence_quality_score}/100</span>
+                                </div>
+                            </div>
+                            
+                            ${analysis.strategic_recommendations.length > 0 ? `
+                                <div class="mt-3">
+                                    <span class="text-xs font-medium text-gray-700">Top Recommendation:</span>
+                                    <p class="text-sm text-gray-600 mt-1">
+                                        <span class="inline-block w-12 text-xs font-medium ${analysis.strategic_recommendations[0].priority === 'high' ? 'text-red-600' : analysis.strategic_recommendations[0].priority === 'medium' ? 'text-yellow-600' : 'text-green-600'}">${analysis.strategic_recommendations[0].priority.toUpperCase()}</span>
+                                        ${analysis.strategic_recommendations[0].recommendation}
+                                    </p>
+                                </div>
+                            ` : ''}
+                        </div>
+                    </div>
+                `;
+            });
+            
+            html += '</div>';
+            
+            // Add competitive insights summary
+            if (results.length > 1) {
+                const yourScore = results[0].analysis ? results[0].analysis.ai_optimization_score : 0;
+                const competitorScores = results.slice(1).map(r => r.analysis ? r.analysis.ai_optimization_score : 0).filter(s => s > 0);
+                const avgCompetitorScore = competitorScores.length > 0 ? Math.round(competitorScores.reduce((a, b) => a + b, 0) / competitorScores.length) : 0;
+                
+                html += `
+                    <div class="mt-6 p-4 bg-gray-50 rounded-lg">
+                        <h4 class="font-bold text-gray-900 mb-3">📈 Competitive Insights</h4>
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                            <div class="text-center">
+                                <div class="text-2xl font-bold ${yourScore >= avgCompetitorScore ? 'text-green-600' : 'text-red-600'}">
+                                    ${yourScore}
+                                </div>
+                                <div class="text-gray-600">Your Score</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold text-gray-600">
+                                    ${avgCompetitorScore}
+                                </div>
+                                <div class="text-gray-600">Avg Competitor</div>
+                            </div>
+                            <div class="text-center">
+                                <div class="text-2xl font-bold ${yourScore >= avgCompetitorScore ? 'text-green-600' : 'text-red-600'}">
+                                    ${yourScore >= avgCompetitorScore ? '+' : ''}${yourScore - avgCompetitorScore}
+                                </div>
+                                <div class="text-gray-600">Difference</div>
+                            </div>
+                        </div>
+                        <div class="mt-3 text-sm text-gray-700">
+                            ${yourScore >= avgCompetitorScore ? 
+                                '🎯 <strong>You\'re ahead!</strong> Focus on maintaining your lead and identifying new opportunities.' :
+                                '⚡ <strong>Opportunity identified!</strong> Your competitors have gaps you can exploit with strategic content optimization.'
+                            }
+                        </div>
+                    </div>
+                `;
+            }
+            
+            competitiveContent.innerHTML = html;
         }
         
         function displayWorkflow(workflow) {
