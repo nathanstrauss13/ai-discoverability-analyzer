@@ -372,6 +372,164 @@ def analyze_webpage_structure(html_content, url):
     
     return analysis
 
+def generate_ai_content_summary(html_content, analysis):
+    """Generate an AI's understanding summary of the content."""
+    
+    if not anthropic:
+        # Provide fallback summary without AI
+        return generate_fallback_content_summary(analysis)
+    
+    # Extract clean text from HTML
+    soup = BeautifulSoup(html_content, 'html.parser')
+    
+    # Remove script and style elements
+    for script in soup(["script", "style"]):
+        script.decompose()
+    
+    # Get text content (limit to first 3000 chars for API efficiency)
+    text = soup.get_text()
+    lines = (line.strip() for line in text.splitlines())
+    chunks = (phrase.strip() for line in lines for phrase in line.split("  "))
+    clean_text = ' '.join(chunk for chunk in chunks if chunk)
+    
+    # Limit text length for API
+    if len(clean_text) > 3000:
+        clean_text = clean_text[:3000] + "..."
+    
+    # Include key metadata in the prompt
+    metadata_context = f"""
+    Page Title: {analysis.get('title', 'No title')}
+    Meta Description: {analysis.get('meta_description', 'No description')}
+    Main Headings: {', '.join(analysis['headings']['h1'][:3]) if analysis['headings']['h1'] else 'No H1 headings'}
+    """
+    
+    try:
+        response = anthropic.messages.create(
+            model="claude-3-haiku-20240307",
+            max_tokens=1000,
+            messages=[{
+                "role": "user",
+                "content": f"""Analyze this webpage content as if you were an AI assistant being asked about it. Provide a structured analysis of how you understand this content.
+
+METADATA:
+{metadata_context}
+
+CONTENT EXCERPT:
+{clean_text}
+
+Please provide:
+
+## 1. TOPIC SUMMARY
+In 2-3 sentences, what is this page about? What's its main purpose?
+
+## 2. KEY ENTITIES & CONCEPTS
+List the most important:
+- Organizations/Companies mentioned
+- Products/Services
+- Key concepts or technologies
+- Notable people (if any)
+
+## 3. EXTRACTABLE FACTS
+What are the 3-5 most important facts or statistics that you would cite if asked about this topic?
+
+## 4. AI RESPONSE SAMPLE
+If someone asked you "Tell me about {analysis.get('title', 'this topic')}", provide a 2-3 sentence response using information from this page.
+
+## 5. CONTENT VISIBILITY INSIGHTS
+- What aspects of this content are most clear and citable?
+- What information might be overlooked by AI systems?
+- Overall visibility rating: (Excellent/Good/Fair/Poor)
+
+Keep responses concise and focused on what AI systems would actually extract and use."""
+            }]
+        )
+        
+        return response.content[0].text
+    except Exception as e:
+        print(f"Error generating AI content summary: {e}")
+        return generate_fallback_content_summary(analysis)
+
+def generate_fallback_content_summary(analysis):
+    """Generate a content summary without AI API."""
+    
+    # Analyze what we can determine from the structure
+    summary = "## 1. TOPIC SUMMARY\n"
+    summary += f"This page titled '{analysis.get('title', 'Untitled')}' "
+    
+    if analysis.get('meta_description'):
+        summary += f"describes: {analysis['meta_description'][:150]}...\n"
+    else:
+        summary += "lacks a meta description, making its purpose unclear to AI systems.\n"
+    
+    summary += "\n## 2. KEY ENTITIES & CONCEPTS\n"
+    
+    # Extract concepts from headings
+    all_headings = []
+    for level in ['h1', 'h2', 'h3']:
+        all_headings.extend(analysis['headings'][level])
+    
+    if all_headings:
+        summary += "Based on heading structure:\n"
+        for heading in all_headings[:5]:
+            summary += f"• {heading}\n"
+    else:
+        summary += "• No clear concepts identified (missing heading structure)\n"
+    
+    summary += "\n## 3. EXTRACTABLE FACTS\n"
+    
+    if 'content_analysis' in analysis:
+        ca = analysis['content_analysis']
+        if ca['factual_content']['statistics_count'] > 0:
+            summary += f"• Contains {ca['factual_content']['statistics_count']} statistical references\n"
+            for stat in ca['factual_content']['numbers_found'][:3]:
+                summary += f"• {stat}\n"
+        else:
+            summary += "• No statistical facts found - AI would struggle to extract concrete information\n"
+    
+    summary += "\n## 4. AI RESPONSE SAMPLE\n"
+    summary += "*AI-powered analysis unavailable without API key. "
+    summary += "Based on structure alone, AI would have limited understanding of this content.*\n"
+    
+    summary += "\n## 5. CONTENT VISIBILITY INSIGHTS\n"
+    
+    # Determine visibility based on analysis
+    visibility_score = 0
+    insights = []
+    
+    if analysis.get('structured_data'):
+        visibility_score += 25
+        insights.append("✓ Structured data helps AI understand content type")
+    else:
+        insights.append("✗ No structured data - AI lacks context")
+    
+    if 'content_analysis' in analysis:
+        ca = analysis['content_analysis']
+        if ca['answer_optimization']['has_faq_section']:
+            visibility_score += 25
+            insights.append("✓ FAQ section provides direct answers")
+        if ca['factual_content']['is_fact_based']:
+            visibility_score += 25
+            insights.append("✓ Factual content is AI-friendly")
+        if ca['promotional_language']['is_promotional']:
+            visibility_score -= 15
+            insights.append("✗ Promotional language reduces AI trust")
+    
+    if analysis['headings']['h1']:
+        visibility_score += 15
+        insights.append("✓ Clear heading structure aids comprehension")
+    
+    for insight in insights:
+        summary += f"• {insight}\n"
+    
+    if visibility_score >= 75:
+        summary += "• Overall visibility rating: Good\n"
+    elif visibility_score >= 50:
+        summary += "• Overall visibility rating: Fair\n"
+    else:
+        summary += "• Overall visibility rating: Poor\n"
+    
+    return summary
+
 def generate_ai_recommendations(analysis):
     """Use Claude to generate specific recommendations based on the analysis."""
     
@@ -632,6 +790,9 @@ def analyze():
     # Analyze webpage structure
     analysis = analyze_webpage_structure(html_content, url)
     
+    # Generate AI content summary
+    ai_content_summary = generate_ai_content_summary(html_content, analysis)
+    
     # Generate AI recommendations
     ai_recommendations = generate_ai_recommendations(analysis)
     
@@ -669,6 +830,7 @@ def analyze():
     result_data = {
         'id': result_id,
         'analysis': analysis,
+        'ai_content_summary': ai_content_summary,
         'recommendations': ai_recommendations,
         'score': score,
         'score_breakdown': score_breakdown,
@@ -687,6 +849,7 @@ def analyze():
         'success': True,
         'id': result_id,
         'analysis': analysis,
+        'ai_content_summary': ai_content_summary,
         'recommendations': ai_recommendations,
         'score': score,
         'score_breakdown': score_breakdown,

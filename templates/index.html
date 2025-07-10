@@ -494,6 +494,15 @@
                 </div>
             </div>
             
+            <!-- AI Content Understanding Section -->
+            <div id="aiContentSummary" class="card px-8 pt-6 pb-8 mb-4 fade-in">
+                <h2 class="text-2xl font-bold mb-6">🤖 AI Content Understanding</h2>
+                <p class="text-gray-600 mb-6">See how AI systems interpret and understand your content - this shows what information AI would extract and use when answering questions about your topic.</p>
+                <div id="aiSummaryContent" class="space-y-4">
+                    <!-- AI summary will be inserted here -->
+                </div>
+            </div>
+            
             <!-- Competitive Analysis Results Section -->
             <div id="competitiveResults" class="card px-8 pt-6 pb-8 mb-4 fade-in hidden">
                 <h2 class="text-2xl font-bold mb-6">📊 Competitive Analysis Results</h2>
@@ -764,6 +773,11 @@
                 scoreDescription.textContent = 'Significant improvements recommended';
             }
 
+            // Display AI content summary if available
+            if (data.ai_content_summary) {
+                displayAIContentSummary(data.ai_content_summary);
+            }
+
             // Display competitive analysis if available
             if (data.competitive_results) {
                 displayCompetitiveResults(data.competitive_results);
@@ -796,6 +810,131 @@
 
             // Scroll to results
             document.getElementById('results').scrollIntoView({ behavior: 'smooth' });
+        }
+        
+        function displayAIContentSummary(summary) {
+            const aiSummaryContent = document.getElementById('aiSummaryContent');
+            
+            // Parse the markdown-style summary into HTML
+            const sections = summary.split(/##\s+\d+\.\s+/);
+            let html = '';
+            
+            // Process each section
+            sections.forEach((section, index) => {
+                if (index === 0 || !section.trim()) return; // Skip empty first element
+                
+                const lines = section.trim().split('\n');
+                const title = lines[0].trim();
+                const content = lines.slice(1).join('\n').trim();
+                
+                // Determine section styling based on title
+                let sectionClass = 'bg-gray-50';
+                let iconEmoji = '📝';
+                
+                if (title.includes('TOPIC SUMMARY')) {
+                    iconEmoji = '📄';
+                    sectionClass = 'bg-blue-50 border-l-4 border-blue-400';
+                } else if (title.includes('KEY ENTITIES')) {
+                    iconEmoji = '🏷️';
+                    sectionClass = 'bg-purple-50 border-l-4 border-purple-400';
+                } else if (title.includes('EXTRACTABLE FACTS')) {
+                    iconEmoji = '📊';
+                    sectionClass = 'bg-green-50 border-l-4 border-green-400';
+                } else if (title.includes('AI RESPONSE SAMPLE')) {
+                    iconEmoji = '💬';
+                    sectionClass = 'bg-yellow-50 border-l-4 border-yellow-400';
+                } else if (title.includes('VISIBILITY INSIGHTS')) {
+                    iconEmoji = '👁️';
+                    sectionClass = 'bg-indigo-50 border-l-4 border-indigo-400';
+                }
+                
+                html += `
+                    <div class="${sectionClass} p-4 rounded-lg mb-4">
+                        <h3 class="font-bold text-lg mb-2 flex items-center">
+                            <span class="text-2xl mr-2">${iconEmoji}</span>
+                            ${title}
+                        </h3>
+                        <div class="text-gray-700 space-y-2">
+                `;
+                
+                // Process content based on section type
+                if (title.includes('KEY ENTITIES') || title.includes('EXTRACTABLE FACTS') || title.includes('VISIBILITY INSIGHTS')) {
+                    // Handle bullet points
+                    const items = content.split('\n').filter(line => line.trim().startsWith('•') || line.trim().startsWith('-'));
+                    if (items.length > 0) {
+                        html += '<ul class="space-y-1">';
+                        items.forEach(item => {
+                            const cleanItem = item.replace(/^[•\-]\s*/, '').trim();
+                            if (cleanItem) {
+                                // Check for checkmarks or X marks
+                                if (cleanItem.includes('✓')) {
+                                    html += `<li class="flex items-start"><span class="text-green-600 mr-2">✓</span><span>${cleanItem.replace('✓', '').trim()}</span></li>`;
+                                } else if (cleanItem.includes('✗')) {
+                                    html += `<li class="flex items-start"><span class="text-red-600 mr-2">✗</span><span>${cleanItem.replace('✗', '').trim()}</span></li>`;
+                                } else {
+                                    html += `<li class="flex items-start"><span class="text-gray-500 mr-2">•</span><span>${cleanItem}</span></li>`;
+                                }
+                            }
+                        });
+                        html += '</ul>';
+                    } else {
+                        // No bullet points, just display as paragraph
+                        html += `<p>${content.replace(/\n/g, '<br>')}</p>`;
+                    }
+                } else if (title.includes('AI RESPONSE SAMPLE')) {
+                    // Display as a quoted response
+                    html += `
+                        <div class="bg-white bg-opacity-50 p-3 rounded border-l-4 border-gray-300 italic">
+                            ${content.replace(/\n/g, '<br>')}
+                        </div>
+                    `;
+                } else {
+                    // Regular paragraph content
+                    html += `<p>${content.replace(/\n/g, '<br>')}</p>`;
+                }
+                
+                // Add visibility rating badge if this is the insights section
+                if (title.includes('VISIBILITY INSIGHTS') && content.includes('Overall visibility rating:')) {
+                    const ratingMatch = content.match(/Overall visibility rating:\s*(\w+)/);
+                    if (ratingMatch) {
+                        const rating = ratingMatch[1];
+                        let badgeClass = 'bg-gray-200 text-gray-800';
+                        if (rating === 'Excellent') {
+                            badgeClass = 'bg-green-200 text-green-800';
+                        } else if (rating === 'Good') {
+                            badgeClass = 'bg-blue-200 text-blue-800';
+                        } else if (rating === 'Fair') {
+                            badgeClass = 'bg-yellow-200 text-yellow-800';
+                        } else if (rating === 'Poor') {
+                            badgeClass = 'bg-red-200 text-red-800';
+                        }
+                        html += `
+                            <div class="mt-3">
+                                <span class="${badgeClass} px-3 py-1 rounded-full text-sm font-semibold">
+                                    Overall AI Visibility: ${rating}
+                                </span>
+                            </div>
+                        `;
+                    }
+                }
+                
+                html += `
+                        </div>
+                    </div>
+                `;
+            });
+            
+            // Add a help tip at the bottom
+            html += `
+                <div class="bg-gray-100 p-4 rounded-lg text-sm text-gray-600">
+                    <p class="flex items-start">
+                        <span class="text-lg mr-2">💡</span>
+                        <span><strong>Pro Tip:</strong> AI systems extract and prioritize factual, well-structured content. The clearer and more organized your information, the more likely it is to appear in AI-generated responses.</span>
+                    </p>
+                </div>
+            `;
+            
+            aiSummaryContent.innerHTML = html;
         }
         
         function displayCompetitiveResults(results) {
